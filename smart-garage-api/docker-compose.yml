@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    container_name: db_smart_garage
+    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: N1c0l@5fmtb
+      MYSQL_DATABASE: smart_garage
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pN1c0l@5fmtb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_USER: root
+      DB_PASS: N1c0l@5fmtb
+      DB_NAME: smart_garage
+      DB_HOST: db
+      DB_PORT: 3306
+    ports:
+      - "3000:3000"
+  ui:
+    build:
+      context: ../smart-garage-ui
+      dockerfile: Dockerfile
+    container_name: ui_smart_garage
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../smart-garage-ui:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    depends_on:
+      - api
+
+volumes:
+  mysql_data:
