@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../Header';
 import VendedorDataService from '../../services/vendedorDataService';
-import { Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
+import { Form, Button, Card, InputGroup, Alert, Spinner } from 'react-bootstrap';
 import HelpPopover from "../HelpPopover";
 
 const RegistroVendedor = () => {
@@ -11,6 +11,7 @@ const RegistroVendedor = () => {
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState('');
     const [sucesso, setSucesso] = useState('');
+    const [mostrarSenha, setMostrarSenha] = useState(false); // Estado para controlar a visibilidade da senha
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -100,10 +101,27 @@ const RegistroVendedor = () => {
                                 <Form.Label htmlFor="usuario">Nome de Usuário (para login) <span className="text-danger">*</span></Form.Label>
                                 <Form.Control id="usuario" name="usuario" type="text" onChange={handleInputChange} />
                             </Form.Group>
+                            
+                            {/* Campo de Senha Corrigido */}
                             <Form.Group className="mb-3">
                                 <Form.Label htmlFor="senha">Senha <span className="text-danger">*</span></Form.Label>
-                                <Form.Control id="senha" name="senha" type="password" onChange={handleInputChange} />
+                                <InputGroup>
+                                    <Form.Control 
+                                        id="senha" 
+                                        name="senha" 
+                                        type={mostrarSenha ? "text" : "password"} 
+                                        onChange={handleInputChange} 
+                                    />
+                                    <Button 
+                                        variant="outline-secondary" 
+                                        onClick={() => setMostrarSenha(!mostrarSenha)}
+                                        type="button"
+                                    >
+                                        <i className={mostrarSenha ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                                    </Button>
+                                </InputGroup>
                             </Form.Group>
+                            
                             <div className="d-grid">
                                 <Button variant="primary" type="submit" disabled={loading}>
                                     {loading ? <Spinner as="span" animation="border" size="sm" /> : 'Cadastrar Vendedor'}

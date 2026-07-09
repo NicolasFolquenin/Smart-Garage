@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AuthService from '../services/authDataService';
-import { Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
+import { Form, Button, Card, Alert, Spinner, InputGroup } from 'react-bootstrap';
 import HelpPopover from './HelpPopover';
 import PasswordStrengthMeter from './PasswordStrengthMeter';
 
@@ -15,14 +15,15 @@ const ResetarSenha = () => {
     const [erro, setErro] = useState('');
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
+    // Estados independentes para cada campo de senha
+    const [mostrarSenha, setMostrarSenha] = useState(false);
+    const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
+    useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key === 'F1') {
                 event.preventDefault();
-
                 const helpIcon = document.getElementById('page-help-popover');
-
                 if (helpIcon) {
                     helpIcon.click();
                 }
@@ -34,7 +35,7 @@ const ResetarSenha = () => {
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [])
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -70,7 +71,7 @@ const ResetarSenha = () => {
                     </div>
                     {mensagem &&
                         <div className='d-flex align-items-center mb-3 mt-2'>
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <i className="bi bi-check-circle-fill text-success me-2"></i>
                             <div className="text text-success">{mensagem}</div>
                         </div>
                     }
@@ -79,17 +80,44 @@ const ResetarSenha = () => {
                             <i className="bi bi-exclamation-triangle-fill text-danger me-2"></i>
                             <div className="text text-danger">{erro}</div>
                         </div>
-
                     )}
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3 mt-3">
                             <Form.Label>Nova Senha</Form.Label>
-                            <Form.Control type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
+                            <InputGroup>
+                                <Form.Control 
+                                    type={mostrarSenha ? "text" : "password"} 
+                                    value={senha} 
+                                    onChange={(e) => setSenha(e.target.value)} 
+                                    required 
+                                />
+                                <Button 
+                                    variant="outline-secondary" 
+                                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                                    type="button"
+                                >
+                                    <i className={mostrarSenha ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                                </Button>
+                            </InputGroup>
                             {senha && <PasswordStrengthMeter password={senha} />}
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Confirmar Nova Senha</Form.Label>
-                            <Form.Control type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} required />
+                            <InputGroup>
+                                <Form.Control 
+                                    type={mostrarConfirmarSenha ? "text" : "password"} 
+                                    value={confirmarSenha} 
+                                    onChange={(e) => setConfirmarSenha(e.target.value)} 
+                                    required 
+                                />
+                                <Button 
+                                    variant="outline-secondary" 
+                                    onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                                    type="button"
+                                >
+                                    <i className={mostrarConfirmarSenha ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                                </Button>
+                            </InputGroup>
                         </Form.Group>
                         <div className="d-grid">
                             <Button type="submit" disabled={loading}>

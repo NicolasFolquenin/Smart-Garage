@@ -1,6 +1,6 @@
-// Importe os ícones que vamos usar
-import { FaCar, FaUserAlt, FaLock } from 'react-icons/fa';
-import { InputGroup, Form } from 'react-bootstrap';
+// Importe os ícones que vamos usar (adicionei o FaEye e FaEyeSlash aqui)
+import { FaCar, FaUserAlt, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { InputGroup, Button, Form } from 'react-bootstrap';
 import ModalEsqueciSenha from './modais/ModalEsqueciSenha';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -17,16 +17,16 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState('');
 
+    // Nova memória para controlar se a senha aparece ou não
+    const [mostrarSenha, setMostrarSenha] = useState(false); 
+
     const [showEsqueciSenhaModal, setShowEsqueciSenhaModal] = useState(false);
 
     useEffect(() => {
-
         const handleKeyDown = (event) => {
             if (event.key === 'F1') {
                 event.preventDefault();
-
                 const helpIcon = document.getElementById('page-help-popover');
-
                 if (helpIcon) {
                     helpIcon.click();
                 }
@@ -49,11 +49,8 @@ const Login = () => {
             const response = await AuthService.login({ usuario, senha });
 
             if (response?.data.token) {
-
                 localStorage.setItem("user_token", response?.data.token);
-
                 login(response.data.token);
-
             }
         } catch (error) {
             const mensagemErro = error.response?.data?.mensagem || "Erro ao tentar fazer login.";
@@ -63,7 +60,6 @@ const Login = () => {
     };
 
     return (
-
         <>
             <div className="login-page-wrapper">
                 <div className="card shadow-lg border-0 login-card-animated" style={{ width: '100%', maxWidth: '450px' }}>
@@ -77,10 +73,7 @@ const Login = () => {
                     <div className="card-body p-5">
                         <div className={`text-center ${!erro ? "mb-5" : "mb-2"}`}>
                             <img src="/static/img/logoapenas.png" alt="Smart Garage Logo" className="navbar-logo mb-1" />
-                            {/* <div className="d-flex align-items-center justify-content-center"> */}
                             <h1 className="fw-bold">Smart Garage</h1>
-
-                            {/* </div> */}
                             <p className="text-muted">Faça login para continuar</p>
                         </div>
 
@@ -89,7 +82,6 @@ const Login = () => {
                                 <i className="bi bi-exclamation-triangle-fill text-danger me-2"></i>
                                 <div className="text text-danger">{erro}</div>
                             </div>
-
                         )}
 
                         <form onSubmit={handleLogin}>
@@ -104,15 +96,23 @@ const Login = () => {
                                 />
                             </InputGroup>
 
+                            {/* O CAMPO DE SENHA MODIFICADO ESTÁ AQUI */}
                             <InputGroup className="mb-4">
                                 <InputGroup.Text><FaLock /></InputGroup.Text>
                                 <Form.Control
-                                    type="password"
+                                    type={mostrarSenha ? "text" : "password"}
                                     placeholder="Senha"
                                     value={senha}
                                     onChange={(e) => setSenha(e.target.value)}
                                     required
                                 />
+                                <Button 
+                                    variant="outline-secondary" 
+                                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                                    className="d-flex align-items-center"
+                                >
+                                    {mostrarSenha ? <FaEyeSlash /> : <FaEye />}
+                                </Button>
                             </InputGroup>
 
                             <div className="d-grid mb-3">

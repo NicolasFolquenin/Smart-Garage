@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FuncionarioDataService from '../services/funcionarioDataService';
 import { useAuth } from '../context/AuthContext';
-import { Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
+import { Form, Button, Card, Spinner, InputGroup } from 'react-bootstrap';
 import HelpPopover from './HelpPopover';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
 
@@ -14,14 +14,15 @@ const AlterarSenhaPrimeiroAcesso = () => {
     const [feedback, setFeedback] = useState({ tipo: '', msg: '' });
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
+    // Novos estados para controlar a visibilidade das senhas separadamente
+    const [mostrarSenha, setMostrarSenha] = useState(false);
+    const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
+    useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key === 'F1') {
                 event.preventDefault();
-
                 const helpIcon = document.getElementById('page-help-popover');
-
                 if (helpIcon) {
                     helpIcon.click();
                 }
@@ -33,7 +34,7 @@ const AlterarSenhaPrimeiroAcesso = () => {
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [])
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,7 +45,7 @@ const AlterarSenhaPrimeiroAcesso = () => {
         }
         setLoading(true);
         try {
-            await FuncionarioDataService.alterarSenha(senha); // Você precisará criar esta função no serviço
+            await FuncionarioDataService.alterarSenha(senha);
             setFeedback({ tipo: 'success', msg: 'Senha alterada com sucesso!' });
 
             setTimeout(() => {
@@ -53,7 +54,7 @@ const AlterarSenhaPrimeiroAcesso = () => {
             }, 2000);
 
         } catch (error) {
-            const mensagemErro = error.response?.data?.mensagem
+            const mensagemErro = error.response?.data?.mensagem;
             setFeedback({ tipo: 'danger', msg: mensagemErro });
             setLoading(false);
         }
@@ -82,22 +83,52 @@ const AlterarSenhaPrimeiroAcesso = () => {
 
                     {feedback.msg && feedback.tipo === 'success' &&
                         <div className='d-flex align-items-center mb-3 container'>
-                            <i className="bi bi-check text-sucess me-2"></i>
+                            <i className="bi bi-check text-success me-2"></i>
                             <div className="text text-success">{feedback.msg}</div>
                         </div>
                     }
 
                     <Form onSubmit={handleSubmit}>
+                        {/* Campo Nova Senha com InputGroup */}
                         <Form.Group className="mb-3">
                             <Form.Label>Nova Senha</Form.Label>
-                            <Form.Control type="password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+                            <InputGroup>
+                                <Form.Control 
+                                    type={mostrarSenha ? "text" : "password"} 
+                                    value={senha} 
+                                    onChange={(e) => setSenha(e.target.value)} 
+                                />
+                                <Button 
+                                    variant="outline-secondary" 
+                                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                                    type="button"
+                                >
+                                    <i className={mostrarSenha ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                                </Button>
+                            </InputGroup>
                             {senha && <PasswordStrengthMeter password={senha} />}
                         </Form.Group>
+
+                        {/* Campo Confirmar Senha com InputGroup */}
                         <Form.Group className="mb-3">
                             <Form.Label>Confirmar Nova Senha</Form.Label>
-                            <Form.Control type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} />
+                            <InputGroup>
+                                <Form.Control 
+                                    type={mostrarConfirmarSenha ? "text" : "password"} 
+                                    value={confirmarSenha} 
+                                    onChange={(e) => setConfirmarSenha(e.target.value)} 
+                                />
+                                <Button 
+                                    variant="outline-secondary" 
+                                    onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                                    type="button"
+                                >
+                                    <i className={mostrarConfirmarSenha ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                                </Button>
+                            </InputGroup>
                         </Form.Group>
-                        <div className="d-grid">
+
+                        <div className="d-grid mt-4">
                             <Button type="submit" disabled={loading}>
                                 {loading ? <Spinner size="sm" /> : 'Definir Nova Senha'}
                             </Button>
