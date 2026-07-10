@@ -5,16 +5,17 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: N1c0l@5fmtb
-      MYSQL_DATABASE: smart_garage
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3306:3306"
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p'N1c0l@5fmtb' || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p'${DB_PASS}' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
   api:
     build: .
     container_name: api_smart_garage
@@ -23,13 +24,17 @@ services:
       db:
         condition: service_healthy
     environment:
-      DB_USER: root
-      DB_PASS: N1c0l@5fmtb
-      DB_NAME: smart_garage
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
       DB_HOST: db
       DB_PORT: 3306
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "3000:3000"
+    volumes:
+      - ./uploads:/app/uploads
+
   ui:
     build:
       context: ../smart-garage-ui
@@ -41,7 +46,8 @@ services:
       - ../smart-garage-ui:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:3000/api
+      # O padrão é localhost, mas na VM ele vai ler o que estiver no seu .env
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
     depends_on:
       - api
 
