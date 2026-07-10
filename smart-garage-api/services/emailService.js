@@ -2,19 +2,20 @@ const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false,
+    port: parseInt(process.env.EMAIL_PORT, 10),
+    secure: true, // true porque você está usando a porta 465 no .env
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        pass: process.env.EMAIL_PASS.replace(/\s/g, ''), // Garante que espaços copiados sem querer sejam removidos
     },
 });
 
 const enviarEmailResetSenha = async (destinatario, token) => {
-    const resetUrl = `http://localhost:5173/resetar-senha/${token}`;
+    // Monta o link dinamicamente usando a variável do .env
+    const resetUrl = `${process.env.FRONTEND_URL}/resetar-senha/${token}`;
 
     const mailOptions = {
-        from: '"Smart Garage" <seu-email@exemplo.com>',
+        from: `"Smart Garage" <${process.env.EMAIL_USER}>`,
         to: destinatario,
         subject: 'Redefinição de Senha - Smart Garage',
         html: `
