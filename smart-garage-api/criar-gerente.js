@@ -15,9 +15,9 @@ const usuariosIniciais = [
     {
         nome: "Gerente da Garagem",
         email: "gerente@smartgarage.com",
-        telefone: "11888888888",
-        usuario: "gerente",
-        senha: "outraSenhaForteGerente456" // Senha temporária
+        telefone: "42999671934",
+        usuario: "Rodrigo",
+        senha: "SenhaForteGerente456" // Senha temporária
     }
 ];
 

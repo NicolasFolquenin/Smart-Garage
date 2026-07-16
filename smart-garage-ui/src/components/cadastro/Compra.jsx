@@ -278,6 +278,34 @@ const Compra = () => {
         }
     }, [erro]);
 
+    // Busca uma marca existente (ignorando maiúsculas/minúsculas e espaços) ou cria uma nova
+    const getOrCreateMarca = async (nome) => {
+        const nomeNormalizado = nome.trim();
+        const response = await MarcaDataService.getAll();
+        const existente = response.data.find(
+            m => m.nome.trim().toLowerCase() === nomeNormalizado.toLowerCase()
+        );
+
+        if (existente) return existente.id;
+
+        const novaMarca = await MarcaDataService.create({ nome: nomeNormalizado });
+        return novaMarca.data.id;
+    };
+
+    // Busca um modelo existente dentro da marca informada ou cria um novo
+    const getOrCreateModelo = async (nome, marcaId) => {
+        const nomeNormalizado = nome.trim();
+        const response = await ModeloDataService.getByMarca(marcaId);
+        const existente = response.data.find(
+            m => m.nome.trim().toLowerCase() === nomeNormalizado.toLowerCase()
+        );
+
+        if (existente) return existente.id;
+
+        const novoModelo = await ModeloDataService.create({ nome: nomeNormalizado, marcaId });
+        return novoModelo.data.id;
+    };
+
     const saveCompra = async (e) => {
         e.preventDefault();
         setErro(false);
@@ -323,11 +351,8 @@ const Compra = () => {
                     throw new Error(verificacao.data.mensagemErro);
                 }
 
-                const marcaResp = await MarcaDataService.create({ nome: marcaNome });
-                const modeloResp = await ModeloDataService.create({
-                    nome: modeloNome,
-                    marcaId: marcaResp.data.id
-                });
+                const marcaId = await getOrCreateMarca(marcaNome);
+                const modeloId = await getOrCreateModelo(modeloNome, marcaId);
 
                 const formData = new FormData();
                 formData.append("ano_fabricacao", automovel.ano_fabricacao);
@@ -339,8 +364,8 @@ const Compra = () => {
                 formData.append("placa", automovel.placa);
                 formData.append("renavam", automovel.renavam);
                 formData.append("valor", automovel.valor);
-                formData.append("marcaId", marcaResp.data.id);
-                formData.append("modeloId", modeloResp.data.id);
+                formData.append("marcaId", marcaId);
+                formData.append("modeloId", modeloId);
                 if (automovel.file) formData.append("file", automovel.file);
 
                 const automovelResp = await AutomovelDataService.create(formData, {

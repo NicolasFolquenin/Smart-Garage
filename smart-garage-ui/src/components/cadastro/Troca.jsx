@@ -39,12 +39,12 @@ const Troca = () => {
         placa: "",
         renavam: "",
         valor: "",
-        marcaId: "",
-        imagem: "",
-        modeloId: ""
+        imagem: ""
     };
 
     const [automovel, setAutomovel] = useState(initialAutomovelState);
+    const [marcaNome, setMarcaNome] = useState("");
+    const [modeloNome, setModeloNome] = useState("");
     const [isReativacao, setIsReativacao] = useState(false);
 
     useEffect(() => {
@@ -56,6 +56,8 @@ const Troca = () => {
             setAutomovel(automovelExistente);
             setAutomovel(prev => ({ ...prev, origem: negocio.negocio }));
             setIsReativacao(true);
+            setMarcaNome(automovelExistente.marca?.nome || automovelExistente.marcaNome || "");
+            setModeloNome(automovelExistente.modelo?.nome || automovelExistente.modeloNome || "");
         } else if (negocio) {
             setAutomovel(prev => ({ ...prev, origem: negocio.negocio }));
         }
@@ -65,37 +67,6 @@ const Troca = () => {
         }
 
     }, [location.state]);
-
-    const [marcasOptions, setMarcasOptions] = useState([]);
-    const [modelosOptions, setModelosOptions] = useState([]);
-    const [isModelosLoading, setIsModelosLoading] = useState(false);
-
-    useEffect(() => {
-        MarcaDataService.getAll().then(response => {
-            setMarcasOptions(response.data.map(m => ({ value: m.id, label: m.nome })));
-        });
-    }, []);
-
-    useEffect(() => {
-        if (!automovel.marcaId) {
-            setModelosOptions([]);
-            // setAutomovel(prev => ({ ...prev, modeloId: '' }));
-            return;
-        }
-
-        setIsModelosLoading(true);
-        ModeloDataService.getByMarca(automovel.marcaId)
-            .then(response => {
-                const options = response.data.map(modelo => ({
-                    value: modelo.id,
-                    label: modelo.nome
-                }));
-                setModelosOptions(options);
-            })
-            .catch(e => console.error("Erro ao buscar modelos:", e))
-            .finally(() => setIsModelosLoading(false));
-
-    }, [automovel.marcaId]);
 
 
     const [automovelOpt, setAutomovelOpt] = useState([]);
@@ -181,10 +152,6 @@ const Troca = () => {
         const { name, value } = event.target;
         const finalValue = name === 'placa' ? value.toUpperCase() : value;
         setAutomovel({ ...automovel, [name]: finalValue });
-    };
-
-    const handleSelectChange = (selectedOption, fieldName) => {
-        setAutomovel(prev => ({ ...prev, [fieldName]: selectedOption ? selectedOption.value : '' }));
     };
 
     useEffect(() => {
@@ -310,8 +277,8 @@ const Troca = () => {
         if (!automovel.km) vazioErros.push("km");
         if (!automovel.combustivel) vazioErros.push("combustivel");
         if (!automovel.cor) vazioErros.push("cor");
-        if (!automovel.modeloId) vazioErros.push("modelo");
-        if (!automovel.marcaId) vazioErros.push("marca");
+        if (!modeloNome) vazioErros.push("modelo");
+        if (!marcaNome) vazioErros.push("marca");
 
         // Tamanho
         if (automovel.renavam && (automovel.renavam.length !== 11 || isNaN(automovel.renavam))) tamanhoErros.push("renavam");
@@ -480,6 +447,34 @@ const Troca = () => {
         }
     }, [erro]);
 
+    // Busca uma marca existente (ignorando maiúsculas/minúsculas e espaços) ou cria uma nova
+    const getOrCreateMarca = async (nome) => {
+        const nomeNormalizado = nome.trim();
+        const response = await MarcaDataService.getAll();
+        const existente = response.data.find(
+            m => m.nome.trim().toLowerCase() === nomeNormalizado.toLowerCase()
+        );
+
+        if (existente) return existente.id;
+
+        const novaMarca = await MarcaDataService.create({ nome: nomeNormalizado });
+        return novaMarca.data.id;
+    };
+
+    // Busca um modelo existente dentro da marca informada ou cria um novo
+    const getOrCreateModelo = async (nome, marcaId) => {
+        const nomeNormalizado = nome.trim();
+        const response = await ModeloDataService.getByMarca(marcaId);
+        const existente = response.data.find(
+            m => m.nome.trim().toLowerCase() === nomeNormalizado.toLowerCase()
+        );
+
+        if (existente) return existente.id;
+
+        const novoModelo = await ModeloDataService.create({ nome: nomeNormalizado, marcaId });
+        return novoModelo.data.id;
+    };
+
 
     const saveTroca = async (e) => {
 
@@ -533,6 +528,9 @@ const Troca = () => {
                     throw new Error(verificacao.data.mensagemErro);
                 }
 
+                const marcaId = await getOrCreateMarca(marcaNome);
+                const modeloId = await getOrCreateModelo(modeloNome, marcaId);
+
                 const formData = new FormData();
 
                 formData.append("ano_fabricacao", automovel.ano_fabricacao);
@@ -544,9 +542,9 @@ const Troca = () => {
                 formData.append("placa", automovel.placa);
                 formData.append("renavam", automovel.renavam);
                 formData.append("valor", automovel.valor);
-                formData.append("marcaId", automovel.marcaId);
-                formData.append("modeloId", automovel.modeloId);
-                formData.append("file", automovel.file);
+                formData.append("marcaId", marcaId);
+                formData.append("modeloId", modeloId);
+                if (automovel.file) formData.append("file", automovel.file);
 
                 const automovelResp = await AutomovelDataService.create(formData, {
                     headers: { "Content-type": "multipart/form-data" }
@@ -685,7 +683,7 @@ const Troca = () => {
                             <div className="row g-3">
                                 <div className="col-md-4">
                                     <label for="fornecedor" class="form-label">Fornecedor <span className="text-danger">*</span></label>
-                                    <Select formatOptionLabel={formatOptionLabelFornecedor} isSearchable={true} className={`${hasError("fornecedor") && "is-invalid"}`} id="fornecedor" name="fornecedor" placeholder="Selecione o fornecedor" options={optionsFornecedor} value={optionsFornecedor.find(option => option.value === troca.clienteId) || null} isClearable={true}
+                                    <Select formatOptionLabel={formatOptionLabelFornecedor} isSearchable={true} className={`${hasError("fornecedor") && "is-invalid"}`} id="fornecedor" name="fornecedor" placeholder="Selecione o fornecedor" options={optionsFornecedor} onChange={handleFornecedorChange} value={optionsFornecedor.find(option => option.value === troca.clienteId) || null} isClearable={true}
                                         styles={getCustomStyles("clienteId")}
                                         filterOption={(option, inputValue) => {
                                             const label = option.label;
@@ -818,30 +816,31 @@ const Troca = () => {
                             <div className="row g-3">
                                 <div className="col-md-4">
                                     <label htmlFor="marca" className="form-label">Marca <span className="text-danger">*</span></label>
-                                    <Select
-                                        placeholder="Selecione uma marca..."
-                                        options={marcasOptions}
-                                        value={marcasOptions.find(option => option.value === automovel.marcaId) || null}
-                                        onChange={(option) => handleSelectChange(option, 'marcaId')}
-                                        isClearable isSearchable
-                                        styles={getCustomStyles("marca")}
-                                        isDisabled={isReativacao}
+                                    <input
+                                        type="text"
+                                        className={`form-control ${hasError("marca") && "is-invalid"}`}
+                                        id="marca"
+                                        name="marca"
+                                        value={marcaNome}
+                                        onChange={(e) => setMarcaNome(e.target.value)}
+                                        placeholder="Ex: Toyota"
+                                        readOnly={isReativacao}
                                     />
-                                    {vazio.includes("marca") && <div className="form-text text-danger ms-1">Informe a marca.</div>}
+                                    {vazio.includes("marca") && <div className="invalid-feedback d-block">Informe a marca.</div>}
                                 </div>
                                 <div className="col-md-4">
                                     <label htmlFor="modelo" className="form-label">Modelo <span className="text-danger">*</span></label>
-                                    <Select
-                                        placeholder="Selecione um modelo..."
-                                        options={modelosOptions}
-                                        value={modelosOptions.find(option => option.value === automovel.modeloId) || null}
-                                        onChange={(option) => handleSelectChange(option, 'modeloId')}
-                                        isDisabled={isReativacao || !automovel.marcaId}
-                                        isLoading={isModelosLoading}
-                                        isClearable isSearchable
-                                        styles={getCustomStyles("modelo")}
+                                    <input
+                                        type="text"
+                                        className={`form-control ${hasError("modelo") && "is-invalid"}`}
+                                        id="modelo"
+                                        name="modelo"
+                                        value={modeloNome}
+                                        onChange={(e) => setModeloNome(e.target.value)}
+                                        placeholder="Ex: Corolla"
+                                        readOnly={isReativacao}
                                     />
-                                    {vazio.includes("modelo") && <div className="form-text text-danger ms-1">Informe o modelo.</div>}
+                                    {vazio.includes("modelo") && <div className="invalid-feedback d-block">Informe o modelo.</div>}
                                 </div>
                                 <div className="col-md-4">
                                     <label htmlFor="cor" className="form-label">Cor <span className="text-danger">*</span></label>
