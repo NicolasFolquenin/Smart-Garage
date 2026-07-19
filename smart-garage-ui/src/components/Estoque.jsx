@@ -134,7 +134,7 @@ const Estoque = () => {
         <>
             <Header />
             <div className="container py-5">
-                <div className="d-flex justify-content-between align-items-center">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
                         <div className="d-flex align-items-center">
                             <h1 className="fw-bold mb-0 me-2">Estoque de Automóveis</h1>
@@ -164,7 +164,7 @@ const Estoque = () => {
                         </div>
                         <p className="text-muted">Consulte e gerencie todos os automóveis disponíveis.</p>
                     </div>
-                    <div className="d-flex align-items-center col-md-4">
+                    <div className="d-flex flex-column flex-md-row align-items-center col-12 col-md-5 gap-3 mt-3 mt-md-0">
                         <div className="me-3 col-md-3">
                             <select name="opcao" id="opcao" className="form-select me-2" value={opcao} onChange={handleInputChangeOpcao}>
                                 <option value="ativos">Ativos</option>

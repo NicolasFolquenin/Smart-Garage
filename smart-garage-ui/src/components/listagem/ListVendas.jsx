@@ -148,7 +148,7 @@ const Vendas = () => {
         <>
             <Header />
             <div className="container">
-                <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 mt-3">
                     <div>
                         <div className="d-flex align-items-center">
                             <h1 className="fw-bold mb-0 me-2">Vendas</h1>
@@ -182,9 +182,9 @@ const Vendas = () => {
                 </div>
 
                 <div className="card shadow-sm">
-                    <div className="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div className="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 className="mb-0">Vendas</h5>
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex flex-column flex-md-row align-items-center gap-2 w-100 w-md-auto">
                             <select name="origem" id="origem" className="form-select w-auto" onChange={handleInputChangeOrigem} value={origem}>
                                 <option value="todas">Origem: Todas</option>
                                 <option value="Compra">Origem: Compra</option>
@@ -208,6 +208,7 @@ const Vendas = () => {
                                 </div>
                             </div>
                         ) : records.length > 0 ? (
+                            <div className="table-responsive">
                             <table className="table mt-4 table-hover">
                                 <thead>
                                     <tr>
@@ -261,6 +262,7 @@ const Vendas = () => {
                                     })}
                                 </tbody>
                             </table>
+                        </div>
                         ) : (
                             <div className="text-center p-5">
                                 <i className="bi bi-journal-x" style={{ fontSize: '4rem', color: '#6c757d' }}></i>

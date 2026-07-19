@@ -56,7 +56,7 @@ const ListClientes = () => {
         <>
             <Header />
             <div className="container mt-4">
-                <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                     <div>
                         <div className="d-flex align-items-center">
                             <h1 className="fw-bold mb-0 me-2">Gerenciar Clientes</h1>
@@ -89,7 +89,7 @@ const ListClientes = () => {
                 </div>
 
                 <Card className="form-card">
-                    <Card.Header className="d-flex justify-content-between align-items-center">
+                    <Card.Header className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 className="mb-0">Lista de Clientes</h5>
                         <Form.Control
                             type="search"

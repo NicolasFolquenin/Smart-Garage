@@ -141,7 +141,7 @@ const Gastos = () => {
         <>
             <Header />
             <div className="container">
-                <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 mt-3">
                     <div>
                         <div className="d-flex align-items-center">
                             <h1 className="fw-bold mb-0 me-2">Gastos</h1>
@@ -179,7 +179,7 @@ const Gastos = () => {
                 </div>
 
                 <div className="card shadow-sm">
-                    <div className="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div className="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 className="mb-0">Vendas</h5>
                         <select name="periodo" id="periodo" className="form-select w-auto" onChange={handleInputChangePeriodo} value={periodo}>
                             <option value="todos">Todo o Período</option>
@@ -197,6 +197,7 @@ const Gastos = () => {
                                 </div>
                             </div>
                         ) : records.length > 0 ? (
+                            <div className="table-responsive">
                             <table className="table mt-4 table-hover">
                                 <thead>
                                     <tr>
@@ -259,6 +260,7 @@ const Gastos = () => {
                                     })}
                                 </tbody>
                             </table>
+                        </div>
                         ) : (
                             <div className="text-center p-5">
                                 <i className="bi bi-journal-x" style={{ fontSize: '4rem', color: '#6c757d' }}></i>

@@ -57,7 +57,7 @@ const ListVendedores = () => {
         <>
             <Header />
             <div className="container mt-4">
-                <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                     <div>
                         <div className="d-flex align-items-center">
                             <h1 className="fw-bold mb-0 me-2">Gerenciar Vendedores</h1>
