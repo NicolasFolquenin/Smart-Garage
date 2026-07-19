@@ -1,11 +1,11 @@
 :root {
-    --bg-slate: #F8FAFC;
+    --bg-slate: #Eef2f6; /* Cor de fundo mais suave e menos brilhante */
     --text-slate: #334155;
     --text-dark: #0F172A;
-    --border-light: #E2E8F0;
+    --border-light: #D3DEE8; /* Borda levemente mais escura para combinar */
     --primary-blue: #0369A1;
     --primary-blue-hover: #0284C7;
-    --card-bg: #FFFFFF;
+    --card-bg: #F8FAFC; /* Cards levemente off-white em vez de branco puro */
 }
 
 [data-bs-theme="dark"] {
