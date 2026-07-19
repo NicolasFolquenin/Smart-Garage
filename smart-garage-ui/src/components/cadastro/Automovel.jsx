@@ -221,10 +221,11 @@ const Automovel = () => {
 
         const modeloResp = await ModeloDataService.create(dataModelo)
             .catch(e => {
-                console.error("Erro ao criar marca:", e);
+                console.error("Erro ao criar modelo:", e);
             });
 
         setModelo(modeloResp.data);
+        formData.append("modeloId", modeloResp?.data.id);
 
         const automovelResp = await AutomovelDataService.create(formData, {
             headers: { "Content-type": "multipart/form-data" }
