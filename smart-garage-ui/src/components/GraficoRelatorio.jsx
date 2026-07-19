@@ -132,6 +132,65 @@ const processarComprasPorMarca = (dados, todasAsMarcas) => {
     };
 };
 
+const processarBalancoGeral = (dados, periodo) => {
+    let formatKey, formatLabel;
+    switch (periodo) {
+        case 'ultimos_3_meses':
+            formatKey = 'yyyy-ww';
+            formatLabel = (date) => `Semana ${format(date, 'ww')}`;
+            break;
+        case 'ultimo_semestre':
+            formatKey = 'yyyy-MM';
+            formatLabel = (date) => format(date, 'MMM/yy');
+            break;
+        case 'ultimo_mes':
+        default:
+            formatKey = 'yyyy-MM-dd';
+            formatLabel = (date) => format(date, 'dd/MM');
+            break;
+    }
+
+    const dadosAgrupados = dados.reduce((acc, item) => {
+        const dataDoItem = item.data_ordenacao;
+        if (!dataDoItem) return acc;
+
+        const chave = format(new Date(dataDoItem), formatKey);
+        if (!acc[chave]) acc[chave] = { receitas: 0, despesas: 0 };
+        
+        if (item.tipo_transacao === 'Venda') {
+            acc[chave].receitas += parseFloat(item.lucro || 0);
+        } else {
+            acc[chave].despesas += parseFloat(item.valor || 0);
+        }
+        return acc;
+    }, {});
+
+    const labelsOrdenados = Object.keys(dadosAgrupados).sort();
+
+    return {
+        labels: labelsOrdenados.map(chave => {
+            if (periodo === 'ultimos_3_meses') {
+                const [ano, semana] = chave.split('-');
+                const dataDaSemana = new Date(ano, 0, 1 + (semana - 1) * 7);
+                return formatLabel(dataDaSemana);
+            }
+            return formatLabel(new Date(chave));
+        }),
+        datasets: [
+            {
+                label: 'Receitas (Lucro)',
+                data: labelsOrdenados.map(chave => dadosAgrupados[chave].receitas),
+                backgroundColor: 'rgba(25, 135, 84, 0.8)',
+            },
+            {
+                label: 'Despesas',
+                data: labelsOrdenados.map(chave => dadosAgrupados[chave].despesas),
+                backgroundColor: 'rgba(220, 53, 69, 0.8)',
+            }
+        ]
+    };
+};
+
 
 
 const GraficoRelatorio = ({ dados, tipo, marcas, periodo }) => {
@@ -208,6 +267,20 @@ const GraficoRelatorio = ({ dados, tipo, marcas, periodo }) => {
                     }
                 }}
             />;
+
+        case 'BalancoGeral':
+            const dadosBalanco = processarBalancoGeral(dados, periodo);
+            const balancoOptions = {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        ...commonOptions.plugins.title,
+                        text: 'Comparativo de Receitas vs Despesas no Período'
+                    }
+                }
+            };
+            return <Bar data={dadosBalanco} options={balancoOptions} />;
 
         default:
             return <p className="text-center text-muted">Visualização não disponível para este tipo de relatório.</p>;

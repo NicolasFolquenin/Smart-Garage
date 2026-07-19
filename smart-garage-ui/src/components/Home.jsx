@@ -74,7 +74,7 @@ const Home = () => {
                             <div className="card h-100 text-center p-3 card-hover">
                                 <div className="card-body d-flex flex-column">
                                     <img src="/static/img/wrench.png" alt="Manutenções" className="mx-auto mb-3" style={{ width: "64px" }} />
-                                    <h3 className="card-title h4 mb-3">Manutenções</h3>
+                                    <h3 className="card-title mb-3">Manutenções</h3>
                                     <p className="card-text text-muted mb-5">Acompanhe os gastos e o andamento das manutenções dos automóveis.</p>
                                     <Link to="/listagem/manutencoes" className="btn btn-primary mt-auto">Acessar</Link>
                                 </div>
@@ -84,7 +84,7 @@ const Home = () => {
                                 <div className="card h-100 text-center p-3 card-hover">
                                     <div className="card-body d-flex flex-column">
                                         <img src="/static/img/troca.png" alt="Trocas" className="mx-auto mb-3" style={{ width: "64px" }} />
-                                        <h3 className="card-title h4 mb-3">Trocas</h3>
+                                        <h3 className="card-title mb-3">Trocas</h3>
                                         <p className="card-text text-muted mb-5">Registre uma troca, gerencie informações dos automóveis envolvidos e valores.</p>
                                         <Link to="/listagem/trocas" className="btn btn-primary mt-auto">Acessar</Link>
                                     </div>

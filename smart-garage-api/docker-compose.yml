@@ -7,8 +7,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASS}
       MYSQL_DATABASE: ${DB_NAME}
+    command: --innodb-buffer-pool-size=64M --max_connections=50
     ports:
       - "3306:3306"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p'${DB_PASS}' || exit 1"]
       interval: 10s
@@ -34,6 +40,11 @@ services:
       - "3000:3000"
     volumes:
       - ./uploads:/app/uploads
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   ui:
     build:
@@ -41,13 +52,15 @@ services:
       dockerfile: Dockerfile
     container_name: ui_smart_garage
     ports:
-      - "5173:5173"
-    volumes:
-      - ../smart-garage-ui:/app
-      - /app/node_modules
+      - "5173:80"
     environment:
       # O padrão é localhost, mas na VM ele vai ler o que estiver no seu .env
       - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       - api
 

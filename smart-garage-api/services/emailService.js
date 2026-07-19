@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
     secure: false, // true porque você está usando a porta 465 no .env
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS.replace(/\s/g, ''), // Garante que espaços copiados sem querer sejam removidos
+        pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''), // Garante que espaços copiados sem querer sejam removidos
     },
 });
 

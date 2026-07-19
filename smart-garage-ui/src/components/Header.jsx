@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
@@ -7,6 +7,25 @@ const Header = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [isDarkMode, setIsDarkMode] = useState(false);
+
+    useEffect(() => {
+        const storedTheme = localStorage.getItem('theme');
+        if (storedTheme === 'dark') {
+            setIsDarkMode(true);
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        } else {
+            setIsDarkMode(false);
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+        }
+    }, []);
+
+    const toggleDarkMode = () => {
+        const newTheme = !isDarkMode ? 'dark' : 'light';
+        setIsDarkMode(!isDarkMode);
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    };
 
     const handleLogout = () => {
         logout();
@@ -40,9 +59,14 @@ const Header = () => {
             <nav className="navbar navbar-color">
                 <div className="container-fluid mx-5">
                     <img src="/static/img/logo.png" alt="Smart Garage Logo" className="navbar-logo mb-1" />
-                    <button className="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
-                        <span className="navbar-toggler-icon"></span>
-                    </button>
+                    <div className="d-flex align-items-center ms-auto">
+                        <button onClick={toggleDarkMode} className="btn btn-link text-decoration-none p-0 me-3 pointer" style={{ color: "var(--text-dark)" }}>
+                            {isDarkMode ? <i className="bi bi-moon-stars-fill fs-5"></i> : <i className="bi bi-sun-fill fs-5"></i>}
+                        </button>
+                        <button className="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+                            <span className="navbar-toggler-icon"></span>
+                        </button>
+                    </div>
                     <div className="offcanvas offcanvas-end" tabIndex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
                         <div className="offcanvas-header">
                             <h4 className="mb-0" id="offcanvasNavbarLabel">Menu</h4>
@@ -117,7 +141,7 @@ const Header = () => {
                                 <hr></hr>
 
                                 <div>
-                                    <a onClick={handleLogout} className="d-flex align-items-center text-dark text-decoration-none">
+                                    <a onClick={handleLogout} className="d-flex align-items-center text-decoration-none pointer" style={{ color: "var(--text-dark)" }}>
                                         <i className="bi bi-box-arrow-right me-2"></i>
                                         <strong>Sair</strong>
                                     </a>

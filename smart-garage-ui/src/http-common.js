@@ -1,8 +1,9 @@
 import axios from "axios";
 import AuthService from "./services/authDataService";
+import { toast } from 'react-toastify';
 
 const apiClient = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
     headers: {
         "Content-type": "application/json"
     }
@@ -10,17 +11,37 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
     (config) => {
-
         const token = AuthService.getCurrentUserToken();
-
         if (token) {
             config.headers["Authorization"] = 'Bearer ' + token;
         }
-
         return config;
     },
     (error) => {
+        return Promise.reject(error);
+    }
+);
 
+apiClient.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        if (error.response) {
+            if (error.response.status === 401) {
+                toast.error("Sua sessão expirou. Faça login novamente.");
+                AuthService.logout();
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            } else if (error.response.status >= 500) {
+                toast.error("Ocorreu um erro no servidor. Tente novamente mais tarde.");
+            } else if (error.response.status === 403) {
+                 toast.error("Você não tem permissão para realizar esta ação.");
+            }
+        } else if (error.request) {
+            toast.error("Não foi possível conectar ao servidor.");
+        }
         return Promise.reject(error);
     }
 );

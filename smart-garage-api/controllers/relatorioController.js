@@ -61,6 +61,77 @@ exports.gerarRelatorio = async (req, res) => {
     let dateColumnName;
 
 
+    if (tipo === 'BalancoGeral') {
+        try {
+            const vendas = await Entidade.Venda.findAll({
+                where: { data: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
+                include: [
+                    { model: Entidade.Automovel, as: 'automovel' },
+                    { model: Entidade.Cliente, as: 'cliente' }
+                ],
+                order: [['data', 'DESC']]
+            });
+
+            let totalLucroVendas = 0;
+            const vendasEnriquecidas = [];
+
+            for (const venda of vendas) {
+                let custo = 0;
+                let lucro = 0;
+                let comissao = 0;
+                const origem = venda.automovel?.origem;
+
+                if (origem === 'Compra') {
+                    const compra = await Entidade.Compra.findOne({ where: { automovelId: venda.automovelId } });
+                    custo = parseFloat(compra?.valor || 0);
+                    comissao = parseFloat(venda.comissao || 0);
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
+                } else if (origem === 'Troca') {
+                    const troca = await Entidade.Troca.findOne({ where: { automovelId: venda.automovelId } });
+                    custo = parseFloat(troca?.valor_aquisicao || 0);
+                    comissao = parseFloat(venda.comissao || 0);
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
+                } else if (origem === 'Consignacao') {
+                    const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: venda.automovelId } });
+                    comissao = parseFloat(venda.comissao || 0);
+                    lucro = parseFloat(consignacao?.valor || 0) - comissao;
+                }
+
+                totalLucroVendas += lucro;
+                vendasEnriquecidas.push({ ...venda.toJSON(), custo, lucro, origem });
+            }
+
+            const gastos = await Entidade.Gasto.findAll({
+                where: { data: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
+                include: [{ model: Entidade.Automovel, as: 'automovel' }]
+            });
+            const totalGastos = gastos.reduce((acc, curr) => acc + parseFloat(curr.valor || 0), 0);
+
+            const manutencoes = await Entidade.Manutencao.findAll({
+                where: { data_envio: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
+                include: [{ model: Entidade.Automovel, as: 'automovel' }]
+            });
+            const totalManutencoes = manutencoes.reduce((acc, curr) => acc + parseFloat(curr.valor || 0), 0);
+
+            const totalDespesas = totalGastos + totalManutencoes;
+            const saldoLiquido = totalLucroVendas - totalDespesas;
+
+            const transacoes = [
+                ...vendasEnriquecidas.map(v => ({ ...v, tipo_transacao: 'Venda', data_ordenacao: v.data })),
+                ...gastos.map(g => ({ ...g.toJSON(), tipo_transacao: 'Gasto', data_ordenacao: g.data })),
+                ...manutencoes.map(m => ({ ...m.toJSON(), tipo_transacao: 'Manutencao', data_ordenacao: m.data_envio }))
+            ];
+
+            transacoes.sort((a, b) => new Date(b.data_ordenacao) - new Date(a.data_ordenacao));
+
+            return res.status(200).send(transacoes);
+
+        } catch (error) {
+            console.error("Erro detalhado ao gerar balanço geral:", error);
+            return res.status(500).send({ mensagem: "Erro ao gerar balanço geral.", error: error.message });
+        }
+    }
+
     switch (tipo) {
 
         case 'Compra':

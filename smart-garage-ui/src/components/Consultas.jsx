@@ -11,7 +11,7 @@ import gerarPDF from '../utils/pdfGenerator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import HelpPopover from './HelpPopover';
-
+import { calcularSumarioRelatorio } from '../utils/calculadoraRelatorios';
 const Consultas = () => {
 
     const [tipoRelatorio, setTipoRelatorio] = useState('Venda');
@@ -107,7 +107,8 @@ const Consultas = () => {
         try {
             const response = await RelatorioDataService.gerarRelatorio(params);
             setDados(response.data);
-            calcularSumario(response.data, params.tipo);
+            const calc = calcularSumarioRelatorio(response.data, params.tipo);
+            setSumario(calc);
             setRelatorioGerado(true);
             setTipoRelatorioGerado(params.tipo);
         } catch (error) {
@@ -128,61 +129,6 @@ const Consultas = () => {
         gerarPDF(dados, sumario, filtros, graficoRef.current);
     };
 
-    const calcularSumario = (dadosRelatorio, tipo) => {
-
-        if (!dadosRelatorio || dadosRelatorio.length === 0) {
-            setSumario(null);
-            return;
-        }
-
-        const quantidadeRegistros = dadosRelatorio.length;
-
-        if (tipo === 'Venda') {
-
-            const lucroTotal = dadosRelatorio.reduce((acc, item) => acc + parseFloat(item.lucro || 0), 0);
-            const valorTotalVendido = dadosRelatorio.reduce((acc, item) => acc + parseFloat(item.valor || 0), 0);
-            const margemMedia = valorTotalVendido > 0 ? (lucroTotal / valorTotalVendido) * 100 : 0;
-
-            setSumario({
-                quantidadeRegistros,
-                valorTotal: valorTotalVendido,
-                lucroTotal,
-                margemMedia
-            });
-
-        }
-
-        else if (tipo === 'Troca') {
-            const totalRecebido = dadosRelatorio
-                .filter(item => parseFloat(item.valor) > 0)
-                .reduce((acc, item) => acc + parseFloat(item.valor), 0);
-
-            const totalPago = dadosRelatorio
-                .filter(item => parseFloat(item.valor) < 0)
-                .reduce((acc, item) => acc + Math.abs(parseFloat(item.valor)), 0);
-
-            const saldoFinal = totalRecebido - totalPago;
-
-            setSumario({
-                quantidadeRegistros,
-                totalRecebido,
-                totalPago,
-                saldoFinal,
-            });
-
-        }
-        else {
-
-            const valorTotal = dadosRelatorio.reduce((acc, item) => acc + parseFloat(item.valor || 0), 0);
-            const ticketmedio = valorTotal / quantidadeRegistros;
-
-            setSumario({
-                valorTotal,
-                quantidadeRegistros,
-                ticketmedio,
-            });
-        }
-    };
 
 
 
@@ -209,6 +155,39 @@ const Consultas = () => {
         const formatCurrency = (value) => parseFloat(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         switch (tipoRelatorioGerado) {
+            case 'BalancoGeral':
+                return (
+                    <Table striped bordered hover responsive>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo de Transação</th>
+                                <th>Descrição / Automóvel</th>
+                                <th>Valor/Lucro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {records.map((item, idx) => (
+                                <tr key={`${item.id}-${item.tipo_transacao}-${idx}`}>
+                                    <td>{formatDate(item.data_ordenacao)}</td>
+                                    <td>
+                                        <span className={`badge ${item.tipo_transacao === 'Venda' ? 'bg-success' : 'bg-danger'}`}>
+                                            {item.tipo_transacao}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {item.tipo_transacao === 'Venda' 
+                                            ? `Venda Placa: ${item.automovel?.placa || ''}` 
+                                            : item.descricao || `Manutenção Placa: ${item.automovel?.placa || ''}`}
+                                    </td>
+                                    <td className={`text-end fw-bold ${item.tipo_transacao === 'Venda' && (item.lucro >= 0) ? 'text-success' : 'text-danger'}`}>
+                                        {formatCurrency(item.tipo_transacao === 'Venda' ? item.lucro : -Math.abs(item.valor))}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                );
             case 'Venda':
                 return (
                     <Table striped bordered hover responsive>
@@ -423,6 +402,7 @@ const Consultas = () => {
                                     <Form.Group>
                                         <Form.Label>Tipo de Operação</Form.Label>
                                         <Form.Select value={tipoRelatorio} onChange={(e) => setTipoRelatorio(e.target.value)}>
+                                            <option value="BalancoGeral">Balanço Geral (Lucro/Prejuízo)</option>
                                             <option value="Venda">Vendas</option>
                                             <option value="Troca">Trocas</option>
                                             <option value="Consignacao">Consignações</option>
@@ -516,9 +496,34 @@ const Consultas = () => {
                                                 </Card>
                                             </Col>
                                         </>
-                                    )
-
-                                        : tipoRelatorioGerado === 'Venda' ? (
+                                    ) : tipoRelatorioGerado === 'BalancoGeral' ? (
+                                        <>
+                                            <Col md={4}><Card className="text-center h-100">
+                                                <Card.Body>
+                                                    <Card.Title className="text-muted">Receitas (Lucro Vendas)</Card.Title>
+                                                    <p className="fs-2 fw-bold text-success">
+                                                        {(sumario?.receitas ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                    </p>
+                                                </Card.Body>
+                                            </Card></Col>
+                                            <Col md={4}><Card className="text-center h-100">
+                                                <Card.Body>
+                                                    <Card.Title className="text-muted">Despesas Operacionais</Card.Title>
+                                                    <p className="fs-2 fw-bold text-danger">
+                                                        {(sumario?.despesas ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                    </p>
+                                                </Card.Body>
+                                            </Card></Col>
+                                            <Col md={4}><Card className="text-center h-100">
+                                                <Card.Body>
+                                                    <Card.Title className="text-muted">Saldo Líquido</Card.Title>
+                                                    <p className={`fs-2 fw-bold ${sumario?.saldo >= 0 ? 'text-success' : 'text-danger'}`}>
+                                                        {(sumario?.saldo ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                    </p>
+                                                </Card.Body>
+                                            </Card></Col>
+                                        </>
+                                    ) : tipoRelatorioGerado === 'Venda' ? (
                                             <>
                                                 <Col md={3}><Card className="text-center h-100">
                                                     <Card.Body>

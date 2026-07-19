@@ -201,11 +201,10 @@ const Manutencao = () => {
                         </div>
                         <p className="text-muted">Listagem e gerenciamento de manutenções.</p>
                     </div>
-                    {user.role === "gerente" &&
-                        <button className='btn btn-primary btn-lg' onClick={() => { navigate('/manutencao') }}>
-                            <i className="bi bi-plus-circle-fill me-2"></i>
-                            Nova Manutenção
-                        </button>}
+                    <button className='btn btn-primary btn-lg' onClick={() => { navigate('/manutencao') }}>
+                        <i className="bi bi-plus-circle-fill me-2"></i>
+                        Nova Manutenção
+                    </button>
                 </div>
 
                 <div className="card shadow-sm">
