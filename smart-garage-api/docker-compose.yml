@@ -50,12 +50,12 @@ services:
     build:
       context: ../smart-garage-ui
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
     container_name: ui_smart_garage
     ports:
       - "5173:80"
-    environment:
-      # O padrão é localhost, mas na VM ele vai ler o que estiver no seu .env
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+
     logging:
       driver: "json-file"
       options:
