@@ -60,8 +60,18 @@ const Header = () => {
                 <div className="container-fluid mx-5">
                     <img src="/static/img/logo.png" alt="Smart Garage Logo" className="navbar-logo mb-1" />
                     <div className="d-flex align-items-center ms-auto">
-                        <button onClick={toggleDarkMode} className="btn btn-link text-decoration-none p-0 me-3 pointer" style={{ color: "var(--text-dark)" }}>
-                            {isDarkMode ? <i className="bi bi-moon-stars-fill fs-5"></i> : <i className="bi bi-sun-fill fs-5"></i>}
+                        <button onClick={toggleDarkMode} className="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center me-3 pointer" style={{ color: "var(--text-dark)", borderColor: "var(--text-dark)" }}>
+                            {isDarkMode ? (
+                                <>
+                                    <i className="bi bi-moon-stars-fill me-2"></i>
+                                    <span>Modo Escuro</span>
+                                </>
+                            ) : (
+                                <>
+                                    <i className="bi bi-sun-fill me-2"></i>
+                                    <span>Modo Claro</span>
+                                </>
+                            )}
                         </button>
                         <button className="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
                             <span className="navbar-toggler-icon"></span>
