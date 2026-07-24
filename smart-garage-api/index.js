@@ -10,7 +10,10 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 
 // Configuração estrita do CORS para suportar cookies
-const allowedOrigins = ['http://localhost:5173', 'https://expressao.sgapp.com.br', 'http://expressao.sgapp.com.br'];
+const allowedOrigins = [
+    'http://localhost:5173', 
+    process.env.FRONTEND_URL || 'https://expressao.sgapp.com.br'
+];
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
