@@ -7,10 +7,24 @@ require('dotenv').config();
 const db = require('./models/index');
 
 const cors = require('cors');
-app.use(cors());
+const cookieParser = require('cookie-parser');
+
+// Configuração estrita do CORS para suportar cookies
+const allowedOrigins = ['http://localhost:5173', 'https://expressao.sgapp.com.br', 'http://expressao.sgapp.com.br'];
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Bloqueado pelo CORS'));
+        }
+    },
+    credentials: true // Essencial para envio e recebimento de Cookies
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 // IMPORTAÇÃO DE TODAS AS ROTAS
 const automovelRoutes = require("./routes/automovelRoutes");

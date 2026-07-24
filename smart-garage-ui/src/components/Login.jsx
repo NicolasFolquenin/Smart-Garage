@@ -48,9 +48,8 @@ const Login = () => {
         try {
             const response = await AuthService.login({ usuario, senha });
 
-            if (response?.data.token) {
-                localStorage.setItem("user_token", response?.data.token);
-                login(response.data.token);
+            if (response?.data?.user) {
+                login(response.data.user);
             }
         } catch (error) {
             const mensagemErro = error.response?.data?.mensagem || "Erro ao tentar fazer login.";

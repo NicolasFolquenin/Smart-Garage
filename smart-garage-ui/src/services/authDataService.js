@@ -4,12 +4,16 @@ const login = (data) => {
     return http.post("/api/login", data);
 };
 
-const logout = () => {
-    localStorage.removeItem("user_token");
+const logout = async () => {
+    try {
+        await http.post("/api/login/logout");
+    } catch (err) {
+        console.error("Erro no logout", err);
+    }
 };
 
-const getCurrentUserToken = () => {
-    return localStorage.getItem("user_token");
+const getMe = () => {
+    return http.get("/api/login/me");
 };
 
 const solicitarResetSenha = (data) => {
@@ -23,7 +27,7 @@ const resetarSenha = (token, data) => {
 const authService = {
     login,
     logout,
-    getCurrentUserToken,
+    getMe,
     solicitarResetSenha,
     resetarSenha,
 };

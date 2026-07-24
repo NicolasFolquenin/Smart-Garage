@@ -80,18 +80,48 @@ exports.login = async (req, res) => {
                 precisa_alterar_senha: funcionario.precisa_alterar_senha
             },
             process.env.JWT_SECRET || 'seu_segredo_super_secreto',
-            { expiresIn: '8h' }
+            { expiresIn: '15m' } // Expira em 15 minutos de inatividade
         );
 
-        // 5. Enviar o token para o cliente
+        // Enviar o token no Cookie HTTP-Only
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 15 * 60 * 1000 // 15 minutos
+        });
+
+        // 5. Enviar mensagem de sucesso e dados do usuário
         res.status(200).send({
             mensagem: "Login bem-sucedido!",
-            token: token
+            user: {
+                id: funcionario?.id,
+                nome: funcionario?.nome,
+                role: role,
+                precisa_alterar_senha: funcionario.precisa_alterar_senha
+            }
         });
 
     } catch (error) {
         console.error("Erro no login:", error);
         res.status(500).send({ erro: 'Um erro ocorreu no servidor.' });
+    }
+};
+
+exports.logout = (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+    });
+    res.status(200).send({ mensagem: "Logout realizado com sucesso." });
+};
+
+exports.me = (req, res) => {
+    if (req.user) {
+        res.status(200).send({ user: req.user });
+    } else {
+        res.status(401).send({ mensagem: "Não autenticado." });
     }
 };
 
