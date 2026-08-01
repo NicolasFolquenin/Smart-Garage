@@ -13,7 +13,7 @@ import MarcaDataService from "../../services/marcaDataService";
 import VendaDataService from "../../services/vendaDataService";
 import ConsignacaoDataService from "../../services/consignacaoDataService";
 import { FaBuilding, FaUserTie, FaIdCard } from "react-icons/fa";
-import { FaCar, FaRegIdCard, FaCalendarAlt, FaFileContract, FaFileSignature } from "react-icons/fa";
+import { FaCar, FaRegIdCard, FaCalendarAlt, FaFileContract, FaFileSignature, FaPlus, FaTrash, FaMoneyBillWave } from "react-icons/fa";
 import { useAuth } from '../../context/AuthContext';
 import ComissaoDataService from '../../services/comissaoDataService';
 import HelpPopover from "../HelpPopover";
@@ -47,13 +47,17 @@ const Venda = () => {
         valor: "",
         data: new Date(),
         comissao: "",
-        forma_pagamento: "",
         automovelId: "",
         clienteId: "",
         funcionarioId: user?.id
     };
 
     const [venda, setVenda] = useState(initialVendaState);
+
+    // Estado para múltiplos pagamentos
+    const [pagamentos, setPagamentos] = useState([
+        { forma_pagamento: "", valor: "", observacao: "" }
+    ]);
 
     useEffect(() => {
         setVenda(prev => ({
@@ -82,6 +86,31 @@ const Venda = () => {
     const handleSelectChange = (selectedOption, fieldName) => {
         setVenda(prev => ({ ...prev, [fieldName]: selectedOption ? selectedOption.value : '' }));
     };
+
+    // Handlers de pagamento
+    const handlePagamentoChange = (index, field, value) => {
+        const novosPagamentos = [...pagamentos];
+        novosPagamentos[index][field] = value;
+        setPagamentos(novosPagamentos);
+    };
+
+    const adicionarPagamento = () => {
+        if (pagamentos.length < 3) {
+            setPagamentos([...pagamentos, { forma_pagamento: "", valor: "", observacao: "" }]);
+        }
+    };
+
+    const removerPagamento = (index) => {
+        if (pagamentos.length > 1) {
+            const novosPagamentos = pagamentos.filter((_, i) => i !== index);
+            setPagamentos(novosPagamentos);
+        }
+    };
+
+    const somaPagamentos = pagamentos.reduce((acc, p) => acc + parseFloat(p.valor || 0), 0);
+    const valorVenda = parseFloat(venda.valor || 0);
+    const diferencaPagamentos = Math.abs(somaPagamentos - valorVenda);
+    const pagamentosConferem = diferencaPagamentos < 0.01 && valorVenda > 0;
 
     const [loading, setLoading] = useState(true);
 
@@ -142,9 +171,16 @@ const Venda = () => {
         if (!venda.clienteId) vazioErros.push("clienteId");
         if (!venda.comissao) vazioErros.push("comissao");
         if (!venda.automovelId) vazioErros.push("automovelId");
-        if (!venda.forma_pagamento) vazioErros.push("forma_pagamento");
 
-        // Tamanho
+        // Validação dos pagamentos
+        pagamentos.forEach((p, i) => {
+            if (!p.forma_pagamento) vazioErros.push(`pagamento_forma_${i}`);
+            if (!p.valor) vazioErros.push(`pagamento_valor_${i}`);
+        });
+
+        if (!pagamentosConferem && venda.valor) {
+            tipoErros.push("pagamentos_soma");
+        }
 
         // Tipo
         if (venda.data && venda.data > new Date()) tipoErros.push("data");
@@ -264,14 +300,15 @@ const Venda = () => {
             padding: 10,
             fontSize: '1rem',
             fontWeight: 'normal',
-            backgroundColor: state.isFocused ? '#f0f0f0' : 'white',
-            color: 'black',
+            backgroundColor: state.isFocused ? 'var(--bs-secondary-bg, #f0f0f0)' : 'var(--bs-body-bg, white)',
+            color: 'var(--bs-body-color, black)',
             whiteSpace: 'pre-wrap',
         }),
         control: (provided) => ({
             ...provided,
             fontSize: '1rem',
-            borderColor: hasError(fieldName) ? '#dc3545' : provided.borderColor,
+            backgroundColor: 'var(--bs-body-bg, white)',
+            borderColor: hasError(fieldName) ? '#dc3545' : 'var(--bs-border-color, #dee2e6)',
             '&:hover': {
                 borderColor: hasError(fieldName) ? '#dc3545' : provided['&:hover']?.borderColor,
             }
@@ -279,12 +316,17 @@ const Venda = () => {
         singleValue: (provided) => ({
             ...provided,
             fontWeight: 'normal',
-            color: '#333',
+            color: 'var(--bs-body-color, #333)',
         }),
         menu: (provided) => ({
             ...provided,
+            backgroundColor: 'var(--bs-body-bg, white)',
             zIndex: 9999,
         }),
+        input: (provided) => ({
+            ...provided,
+            color: 'var(--bs-body-color, #333)'
+        })
     });
 
     const [regrasComissao, setRegrasComissao] = useState([]);
@@ -299,21 +341,27 @@ const Venda = () => {
 
     useEffect(() => {
         const valorVenda = parseFloat(venda.valor);
-        if (isNaN(valorVenda) || regrasComissao.length === 0) {
+        if (isNaN(valorVenda)) {
             setVenda(prev => ({ ...prev, comissao: '' }));
             return;
         }
 
         let comissaoCalculada = '';
-        // Encontra a regra correta
-        for (const regra of regrasComissao) {
-            const min = parseFloat(regra.valor_minimo);
-            const max = regra.valor_maximo ? parseFloat(regra.valor_maximo) : Infinity;
 
-            if (valorVenda >= min && valorVenda < max) {
-                comissaoCalculada = regra.valor_comissao;
-                break;
+        if (regrasComissao && regrasComissao.length > 0) {
+            // Encontra a regra correta
+            for (const regra of regrasComissao) {
+                const min = parseFloat(regra.valor_minimo);
+                const maxParsed = parseFloat(regra.valor_maximo);
+                const max = (!isNaN(maxParsed) && maxParsed > 0) ? maxParsed : Infinity;
+                if (valorVenda >= min && valorVenda <= max) {
+                    comissaoCalculada = regra.valor_comissao;
+                    break;
+                }
             }
+        } else {
+            // Fallback caso não existam regras no banco
+            comissaoCalculada = valorVenda < 50000 ? 300 : valorVenda >= 100000 ? 700 : 500;
         }
 
         setVenda(prev => ({
@@ -353,10 +401,14 @@ const Venda = () => {
                 comissao: venda.comissao,
                 valor: venda.valor,
                 data: venda.data,
-                forma_pagamento: venda.forma_pagamento,
                 clienteId: venda.clienteId,
                 automovelId: venda.automovelId,
-                funcionarioId: venda.funcionarioId
+                funcionarioId: venda.funcionarioId,
+                pagamentos: pagamentos.map(p => ({
+                    forma_pagamento: p.forma_pagamento,
+                    valor: parseFloat(p.valor),
+                    observacao: p.observacao || null
+                }))
             };
 
             const vendaResp = await VendaDataService.create(dataVenda)
@@ -413,6 +465,10 @@ const Venda = () => {
 
     }
 
+    const formatter = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
 
     return (
         <>
@@ -434,6 +490,9 @@ const Venda = () => {
                                     <ol className="mt-1" style={{ textAlign: "justify" }}>
                                         <li className="mb-1">
                                             <strong>Detalhes da Venda:</strong> Preencha o valor final da venda, a forma de pagamento e a data da transação. A comissão é calculada automaticamente com base no valor da venda.
+                                        </li>
+                                        <li className="mb-1">
+                                            <strong>Formas de Pagamento:</strong> Adicione até 3 formas de pagamento diferentes. A soma dos valores deve ser igual ao valor total da venda.
                                         </li>
                                         <li>
                                             <strong>Pós-Venda:</strong> Ao salvar, o automóvel será marcado como inativo. Se o veículo era consignado, o contrato de consignação será automaticamente finalizado com a data da venda.
@@ -473,7 +532,7 @@ const Venda = () => {
                         <div className="card-body">
                             <div className="row g-3">
                                 <div className="col-md-4">
-                                    <label for="valor" class="form-label">Valor da Venda (R$) <span className="text-danger">*</span></label>
+                                    <label htmlFor="valor" className="form-label">Valor da Venda (R$) <span className="text-danger">*</span></label>
                                     <NumericFormat className={`form-control ${hasError("valor") && "is-invalid"}`} id="valor" name="valor" placeholder="R$ 0,00" onValueChange={(values) => { setVenda(prev => ({ ...prev, valor: values.value })); }} value={venda.valor}
                                         thousandSeparator="."
                                         decimalSeparator=","
@@ -482,18 +541,11 @@ const Venda = () => {
                                         fixedDecimalScale={true}
                                         allowNegative={false}
                                     />
-                                    {vazio.includes("valor") && <div id="valorHelp" class="form-text text-danger ms-1">Informe o valor.</div>}
-                                    {tipo.includes("valor") && <div id="valorHelp" class="form-text text-danger ms-1">Valor inválido.</div>}
+                                    {vazio.includes("valor") && <div id="valorHelp" className="form-text text-danger ms-1">Informe o valor.</div>}
+                                    {tipo.includes("valor") && <div id="valorHelp" className="form-text text-danger ms-1">Valor inválido.</div>}
                                 </div>
                                 <div className="col-md-4">
-                                    <label for="forma_pagamento" class="form-label">Forma de Pagamento <span className="text-danger">*</span></label>
-                                    <Select className={`${hasError("forma_pagamento") && "is-invalid"}`} id="forma_pagamento" name="forma_pagamento" placeholder="Selecione a forma de pagamento" value={optionsFormaPagamento.find(option => option.value === venda.forma_pagamento)} onChange={(option) => setVenda({ ...venda, forma_pagamento: option.value })} options={optionsFormaPagamento} isClearable={true}
-                                        styles={getCustomStyles("forma_pagamento")}>
-                                    </Select>
-                                    {vazio.includes("forma_pagamento") && <div id="formapagamentohelp" class="form-text text-danger ms-1">Informe a forma de pagamento.</div>}
-                                </div>
-                                <div className="col-md-4">
-                                    <label for="comissao" class="form-label">Comissão (R$) <span className="text-danger">*</span></label>
+                                    <label htmlFor="comissao" className="form-label">Comissão (R$) <span className="text-danger">*</span></label>
                                     <NumericFormat type="text" className={`form-control ${hasError("comissao") && "is-invalid"}`} id="comissao" name="comissao" placeholder="R$ 0,00" value={venda?.comissao} readOnly
                                         thousandSeparator="."
                                         decimalSeparator=","
@@ -501,11 +553,11 @@ const Venda = () => {
                                         decimalScale={2}
                                         fixedDecimalScale={true}
                                         allowNegative={false} />
-                                    {vazio.includes("comissao") && <div id="comissaohelp" class="form-text text-danger ms-1">Informe o valor de comissão.</div>}
-                                    {tipo.includes("comissao") && <div id="comissaohelp" class="form-text text-danger ms-1">Valor de comissão inválido.</div>}
+                                    {vazio.includes("comissao") && <div id="comissaohelp" className="form-text text-danger ms-1">Informe o valor de comissão.</div>}
+                                    {tipo.includes("comissao") && <div id="comissaohelp" className="form-text text-danger ms-1">Valor de comissão inválido.</div>}
                                 </div>
                                 <div className="col-md-4">
-                                    <label for="data" class="form-label">Data <span className="text-danger">*</span></label><br />
+                                    <label htmlFor="data" className="form-label">Data <span className="text-danger">*</span></label><br />
                                     <DatePicker
                                         calendarClassName="custom-datepicker-container"
                                         className={`form-control ${hasError("data") && "is-invalid"}`}
@@ -517,11 +569,11 @@ const Venda = () => {
                                         onChange={(date) => setVenda({ ...venda, data: date })}
                                         dateFormat="dd/MM/yyyy"
                                     />
-                                    {vazio.includes("data") && <div id="dataHelp" class="form-text text-danger ms-1">Informe a data.</div>}
-                                    {tipo.includes("data") && <div id="dataHelp" class="form-text text-danger ms-1">Data inválida.</div>}
+                                    {vazio.includes("data") && <div id="dataHelp" className="form-text text-danger ms-1">Informe a data.</div>}
+                                    {tipo.includes("data") && <div id="dataHelp" className="form-text text-danger ms-1">Data inválida.</div>}
                                 </div>
-                                <div className="col-md-4">
-                                    <label for="fornecedor" class="form-label">Comprador <span className="text-danger">*</span></label>
+                                <div className="col-md-6">
+                                    <label htmlFor="fornecedor" className="form-label">Comprador <span className="text-danger">*</span></label>
                                     <Select formatOptionLabel={formatOptionLabelFornecedor} styles={getCustomStyles("clienteId")}
                                         isSearchable={true} className={`${hasError("clienteId") && "is-invalid"}`} id="clienteId" name="clienteId" placeholder="Selecione o fornecedor" options={optionsFornecedor} value={optionsFornecedor.find(option => option.value === venda.clienteId) || null} isClearable={true} filterOption={(option, inputValue) => {
                                             const label = option.label;
@@ -536,8 +588,8 @@ const Venda = () => {
                                     </Select>
                                     {vazio.includes("clienteId") && <div className="form-text text-danger ms-1">Informe o comprador.</div>}
                                 </div>
-                                <div className="col-md-4">
-                                    <label for="automovel_fornecido" class="form-label">Automóvel Fornecido <span className="text-danger">*</span></label>
+                                <div className="col-md-6">
+                                    <label htmlFor="automovel_fornecido" className="form-label">Automóvel Fornecido <span className="text-danger">*</span></label>
                                     <Select formatOptionLabel={formatOptionLabel} styles={getCustomStyles("automovelId")} isSearchable={true} className={`${hasError("automovelId") && "is-invalid"}`} id="automovelId" name="automovelId" placeholder="Selecione o automovel" options={optionsAutomovel} value={optionsAutomovel.find(option => option.value === venda.automovelId) || null} isClearable={true}
                                         filterOption={(option, inputValue) => {
                                             const label = option.label;
@@ -549,9 +601,124 @@ const Venda = () => {
                                             return texto.includes(inputValue.toLowerCase());
                                         }}>
                                     </Select>
-                                    {vazio.includes("automovelId") && <div id="valorHelp" class="form-text text-danger ms-1">Informe o automóvel fornecido.</div>}
+                                    {vazio.includes("automovelId") && <div id="valorHelp" className="form-text text-danger ms-1">Informe o automóvel fornecido.</div>}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Card de Formas de Pagamento */}
+                    <div className="card mb-4 form-card">
+                        <div className="card-header d-flex align-items-center justify-content-between">
+                            <div className="d-flex align-items-center">
+                                <FaMoneyBillWave className="me-2" />
+                                Formas de Pagamento
+                            </div>
+                            {pagamentos.length < 3 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-primary btn-sm d-flex align-items-center"
+                                    onClick={adicionarPagamento}
+                                >
+                                    <FaPlus className="me-1" /> Adicionar
+                                </button>
+                            )}
+                        </div>
+                        <div className="card-body">
+                            {pagamentos.map((pagamento, index) => (
+                                <div key={index} className={`row g-3 align-items-end ${index > 0 ? 'mt-2 pt-3 border-top' : ''}`}>
+                                    <div className="col-md-4">
+                                        <label className="form-label">
+                                            Forma de Pagamento {index + 1} <span className="text-danger">*</span>
+                                        </label>
+                                        <Select
+                                            placeholder="Selecione..."
+                                            options={optionsFormaPagamento}
+                                            value={optionsFormaPagamento.find(o => o.value === pagamento.forma_pagamento) || null}
+                                            onChange={(option) => handlePagamentoChange(index, 'forma_pagamento', option ? option.value : '')}
+                                            isClearable={true}
+                                            styles={getCustomStyles(`pagamento_forma_${index}`)}
+                                            className={`${hasError(`pagamento_forma_${index}`) && "is-invalid"}`}
+                                        />
+                                        {vazio.includes(`pagamento_forma_${index}`) && (
+                                            <div className="form-text text-danger ms-1">Informe a forma de pagamento.</div>
+                                        )}
+                                    </div>
+                                    <div className="col-md-3">
+                                        <label className="form-label">
+                                            Valor (R$) <span className="text-danger">*</span>
+                                        </label>
+                                        <NumericFormat
+                                            className={`form-control ${hasError(`pagamento_valor_${index}`) && "is-invalid"}`}
+                                            placeholder="R$ 0,00"
+                                            value={pagamento.valor}
+                                            onValueChange={(values) => handlePagamentoChange(index, 'valor', values.value)}
+                                            thousandSeparator="."
+                                            decimalSeparator=","
+                                            prefix="R$ "
+                                            decimalScale={2}
+                                            fixedDecimalScale={true}
+                                            allowNegative={false}
+                                        />
+                                        {vazio.includes(`pagamento_valor_${index}`) && (
+                                            <div className="form-text text-danger ms-1">Informe o valor.</div>
+                                        )}
+                                    </div>
+                                    <div className="col-md-4">
+                                        <label className="form-label">Observação</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Ex: Entrada, Parcela..."
+                                            value={pagamento.observacao}
+                                            onChange={(e) => handlePagamentoChange(index, 'observacao', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-md-1 d-flex justify-content-center">
+                                        {pagamentos.length > 1 && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-danger btn-sm"
+                                                onClick={() => removerPagamento(index)}
+                                                title="Remover pagamento"
+                                            >
+                                                <FaTrash />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Resumo dos pagamentos */}
+                            <div className={`mt-4 p-3 rounded d-flex justify-content-between align-items-center ${pagamentosConferem ? 'bg-success bg-opacity-10 border border-success' : valorVenda > 0 ? 'bg-warning bg-opacity-10 border border-warning' : 'border'}`}>
+                                <div>
+                                    <span className="fw-bold">Soma dos Pagamentos: </span>
+                                    <span className={pagamentosConferem ? 'text-success fw-bold' : 'text-warning fw-bold'}>
+                                        {formatter.format(somaPagamentos)}
+                                    </span>
+                                    <span className="text-muted mx-2">/</span>
+                                    <span className="text-muted">
+                                        Valor da Venda: {formatter.format(valorVenda)}
+                                    </span>
+                                </div>
+                                <div>
+                                    {pagamentosConferem ? (
+                                        <span className="badge bg-success d-flex align-items-center">
+                                            <i className="bi bi-check-circle-fill me-1"></i> Valores conferem
+                                        </span>
+                                    ) : valorVenda > 0 ? (
+                                        <span className="badge bg-warning text-dark d-flex align-items-center">
+                                            <i className="bi bi-exclamation-triangle-fill me-1"></i> Diferença: {formatter.format(diferencaPagamentos)}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            {tipo.includes("pagamentos_soma") && (
+                                <div className="form-text text-danger ms-1 mt-2">
+                                    A soma dos pagamentos deve ser igual ao valor da venda.
+                                </div>
+                            )}
                         </div>
                     </div>
 

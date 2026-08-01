@@ -4,6 +4,7 @@ import VendaDataService from "../../services/vendaDataService";
 import AutomovelDataService from "../../services/automovelDataService";
 import MarcaDataService from "../../services/marcaDataService";
 import ModeloDataService from "../../services/modeloDataService";
+import ComissaoDataService from "../../services/comissaoDataService";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useCallback } from "react";
 import ClienteDataService from "../../services/clienteDataService";
@@ -13,7 +14,7 @@ import JuridicaDataService from "../../services/juridicaDataService";
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { FaBuilding, FaUserTie, FaIdCard, FaFileContract } from "react-icons/fa";
-import { FaCar, FaRegIdCard, FaCalendarAlt, FaFileSignature } from "react-icons/fa";
+import { FaCar, FaRegIdCard, FaCalendarAlt, FaFileSignature, FaPlus, FaTrash, FaMoneyBillWave } from "react-icons/fa";
 import React from "react";
 import HelpPopover from "../HelpPopover";
 import { NumericFormat } from "react-number-format";
@@ -35,12 +36,27 @@ const EditarVenda = () => {
 
     const [formData, setFormData] = useState({
 
-        valor: "", data: "", forma_pagamento: "", comissao: "",
+        valor: "", data: "", comissao: "",
 
         clienteId: null,
         automovelId: null,
 
     });
+
+    // Estado para múltiplos pagamentos
+    const [pagamentos, setPagamentos] = useState([
+        { forma_pagamento: "", valor: "", observacao: "" }
+    ]);
+
+    const [regrasComissao, setRegrasComissao] = useState([]);
+
+    useEffect(() => {
+        ComissaoDataService.getAll()
+            .then(response => {
+                setRegrasComissao(response.data);
+            })
+            .catch(e => console.error("Erro ao buscar regras de comissão:", e));
+    }, []);
 
 
     useEffect(() => {
@@ -56,7 +72,6 @@ const EditarVenda = () => {
             JuridicaDataService.getAll()
         ]).then(([vendaId, automoveis, modelos, marcas, clientes, fisica, juridica]) => {
             const venda = vendaId.data;
-            setFormData(prev => ({ ...prev, ...venda }));
 
             const dataVendaAjustada = ajustarDataParaFusoLocal(venda.data);
 
@@ -64,6 +79,22 @@ const EditarVenda = () => {
                 ...venda,
                 data: dataVendaAjustada
             });
+
+            // Carregar pagamentos existentes
+            if (venda.pagamento_vendas && venda.pagamento_vendas.length > 0) {
+                setPagamentos(venda.pagamento_vendas.map(p => ({
+                    forma_pagamento: p.forma_pagamento,
+                    valor: p.valor,
+                    observacao: p.observacao || ""
+                })));
+            } else if (venda.forma_pagamento) {
+                // Fallback para vendas antigas com forma_pagamento direto
+                setPagamentos([{
+                    forma_pagamento: venda.forma_pagamento,
+                    valor: venda.valor,
+                    observacao: ""
+                }]);
+            }
 
             setAutomovel(automoveis.data);
             setModelo(modelos.data);
@@ -107,21 +138,62 @@ const EditarVenda = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Handlers de pagamento
+    const handlePagamentoChange = (index, field, value) => {
+        const novosPagamentos = [...pagamentos];
+        novosPagamentos[index][field] = value;
+        setPagamentos(novosPagamentos);
+    };
+
+    const adicionarPagamento = () => {
+        if (pagamentos.length < 3) {
+            setPagamentos([...pagamentos, { forma_pagamento: "", valor: "", observacao: "" }]);
+        }
+    };
+
+    const removerPagamento = (index) => {
+        if (pagamentos.length > 1) {
+            const novosPagamentos = pagamentos.filter((_, i) => i !== index);
+            setPagamentos(novosPagamentos);
+        }
+    };
+
+    const somaPagamentos = pagamentos.reduce((acc, p) => acc + parseFloat(p.valor || 0), 0);
+    const valorVenda = parseFloat(formData.valor || 0);
+    const diferencaPagamentos = Math.abs(somaPagamentos - valorVenda);
+    const pagamentosConferem = diferencaPagamentos < 0.01 && valorVenda > 0;
+
 
     useEffect(() => {
+        const valorVenda = parseFloat(formData?.valor);
+        if (isNaN(valorVenda)) {
+            setFormData(prev => ({ ...prev, comissao: '' }));
+            return;
+        }
 
-        let comissao = "";
+        let comissaoCalculada = '';
 
-        if (formData?.valor !== "") {
-            comissao = formData?.valor < 50000 ? 300 : formData?.valor >= 100000 ? 700 : 500;
+        if (regrasComissao && regrasComissao.length > 0) {
+            for (const regra of regrasComissao) {
+                const min = parseFloat(regra.valor_minimo);
+                const maxParsed = parseFloat(regra.valor_maximo);
+                const max = (!isNaN(maxParsed) && maxParsed > 0) ? maxParsed : Infinity;
+
+                if (valorVenda >= min && valorVenda <= max) {
+                    comissaoCalculada = regra.valor_comissao;
+                    break;
+                }
+            }
+        } else {
+            comissaoCalculada = valorVenda < 50000 ? 300 : valorVenda >= 100000 ? 700 : 500;
         }
 
         setFormData(prev => ({
             ...prev,
-            comissao: comissao
+            comissao: comissaoCalculada
         }));
 
-    }, [formData?.valor]);
+    }, [formData?.valor, regrasComissao]);
 
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,8 +220,17 @@ const EditarVenda = () => {
         if (!formData.clienteId) vazioErros.push("clienteId");
         if (!formData.comissao) vazioErros.push("comissao");
         if (!formData.automovelId) vazioErros.push("automovelId");
-        if (!formData.forma_pagamento) vazioErros.push("forma_pagamento");
         if (!formData.valor) vazioErros.push("valor");
+
+        // Validação dos pagamentos
+        pagamentos.forEach((p, i) => {
+            if (!p.forma_pagamento) vazioErros.push(`pagamento_forma_${i}`);
+            if (!p.valor) vazioErros.push(`pagamento_valor_${i}`);
+        });
+
+        if (!pagamentosConferem && formData.valor) {
+            tipoErros.push("pagamentos_soma");
+        }
 
         // Tipo
         if (formData.valor && isNaN(formData.valor)) tipoErros.push("valor");
@@ -254,14 +335,15 @@ const EditarVenda = () => {
             padding: 10,
             fontSize: '1rem',
             fontWeight: 'normal',
-            backgroundColor: state.isFocused ? '#f0f0f0' : 'white',
-            color: 'black',
+            backgroundColor: state.isFocused ? 'var(--bs-secondary-bg, #f0f0f0)' : 'var(--bs-body-bg, white)',
+            color: 'var(--bs-body-color, black)',
             whiteSpace: 'pre-wrap',
         }),
         control: (provided) => ({
             ...provided,
             fontSize: '1rem',
-            borderColor: hasError(fieldName) ? '#dc3545' : provided.borderColor,
+            backgroundColor: 'var(--bs-body-bg, white)',
+            borderColor: hasError(fieldName) ? '#dc3545' : 'var(--bs-border-color, #dee2e6)',
             '&:hover': {
                 borderColor: hasError(fieldName) ? '#dc3545' : provided['&:hover']?.borderColor,
             }
@@ -269,14 +351,37 @@ const EditarVenda = () => {
         singleValue: (provided) => ({
             ...provided,
             fontWeight: 'normal',
-            color: '#333',
+            color: 'var(--bs-body-color, #333)',
         }),
         menu: (provided) => ({
             ...provided,
+            backgroundColor: 'var(--bs-body-bg, white)',
             zIndex: 9999,
         }),
+        input: (provided) => ({
+            ...provided,
+            color: 'var(--bs-body-color, #333)'
+        })
     });
 
+    const optionsFormaPagamento = [
+        {
+            label: "Cartão",
+            value: "Cartão"
+        },
+        {
+            label: "Dinheiro",
+            value: "Dinheiro"
+        },
+        {
+            label: "Financiamento",
+            value: "Financiamento"
+        },
+        {
+            label: "Pix",
+            value: "Pix"
+        }
+    ];
 
 
     const editarVenda = async (e) => {
@@ -302,14 +407,18 @@ const EditarVenda = () => {
 
         try {
 
-            const vendaData = new FormData();
-            vendaData.append("data", formData.data);
-            vendaData.append("valor", formData.valor);
-            vendaData.append("comissao", formData.comissao);
-            vendaData.append("forma_pagamento", formData.forma_pagamento);
-            vendaData.append("clienteId", formData.clienteId);
-            vendaData.append("automovelId", formData.automovelId);
-
+            const vendaData = {
+                data: formData.data,
+                valor: formData.valor,
+                comissao: formData.comissao,
+                clienteId: formData.clienteId,
+                automovelId: formData.automovelId,
+                pagamentos: pagamentos.map(p => ({
+                    forma_pagamento: p.forma_pagamento,
+                    valor: parseFloat(p.valor),
+                    observacao: p.observacao || null
+                }))
+            };
 
             await VendaDataService.update(id, vendaData);
 
@@ -342,25 +451,10 @@ const EditarVenda = () => {
         </>
     ));
 
-    const optionsFormaPagamento = [
-        {
-            label: "Cartão",
-            value: "Cartão"
-        },
-        {
-            label: "Dinheiro",
-            value: "Dinheiro"
-        },
-        {
-            label: "Financiamento",
-            value: "Financiamento"
-        },
-        {
-            label: "Pix",
-            value: "Pix"
-        }
-    ];
-
+    const formatter = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
 
 
     return (
@@ -382,7 +476,7 @@ const EditarVenda = () => {
                                     <strong>Pontos Importantes:</strong>
                                     <ol className="mt-1" style={{ textAlign: "justify" }}>
                                         <li className="mb-1">
-                                            <strong>Correção de Dados:</strong> Altere o valor final da venda, a data e a forma de pagamento, se necessário. O valor de comissão será calculado automaticamente a partir do valor final da venda.
+                                            <strong>Correção de Dados:</strong> Altere o valor final da venda, a data e as formas de pagamento, se necessário. O valor de comissão será calculado automaticamente a partir do valor final da venda.
                                         </li>
                                         <li className="mb-1">
                                             <strong>Vínculos:</strong> Você pode corrigir o cliente (comprador) ou o automóvel associado a esta transação.
@@ -425,7 +519,7 @@ const EditarVenda = () => {
                         <div className="card-body">
                             <div className="row g-3">
                                 <div className="col-md-4">
-                                    <label for="valor" class="form-label">Valor da Venda (R$) <span className="text-danger">*</span></label>
+                                    <label htmlFor="valor" className="form-label">Valor da Venda (R$) <span className="text-danger">*</span></label>
                                     <NumericFormat className={`form-control ${hasError("valor") && "is-invalid"}`} id="valor" name="valor" placeholder="R$ 0,00" value={formData.valor ?? ""}
                                         onValueChange={(values) => {
                                             const syntheticEvent = {
@@ -448,13 +542,7 @@ const EditarVenda = () => {
                                     {tipo.includes("valor") && <div className="invalid-feedback">Valor inválido.</div>}
                                 </div>
                                 <div className="col-md-4">
-                                    <label for="forma_pagamento" class="form-label">Forma de Pagamento <span className="text-danger">*</span></label>
-                                    <Select className={`${hasError("forma_pagamento") && "is-invalid"}`} id="forma_pagamento" name="forma_pagamento" placeholder="Selecione a forma de pagamento" value={optionsFormaPagamento.find(option => option.value === formData.forma_pagamento)} onChange={(option) => setFormData({ ...formData, forma_pagamento: option.value })} options={optionsFormaPagamento} isClearable={true}>
-                                    </Select>
-                                    {vazio.includes("forma_pagamento") && <div id="formapagamentohelp" class="form-text text-danger ms-1">Informe a forma de pagamento.</div>}
-                                </div>
-                                <div className="col-md-4">
-                                    <label for="comissao" class="form-label">Comissão (R$) <span className="text-danger">*</span></label>
+                                    <label htmlFor="comissao" className="form-label">Comissão (R$) <span className="text-danger">*</span></label>
                                     <NumericFormat className={`form-control ${hasError("comissao") && "is-invalid"}`} id="comissao" name="comissao" placeholder="R$ 0,00" value={formData.comissao ?? ""}
                                         onValueChange={(values) => {
                                             const syntheticEvent = {
@@ -473,11 +561,11 @@ const EditarVenda = () => {
                                         fixedDecimalScale={true}
                                         allowNegative={false}
                                     />
-                                    {vazio.includes("comissao") && <div id="comissaohelp" class="form-text text-danger ms-1">Informe o valor de comissão.</div>}
-                                    {tipo.includes("comissao") && <div id="comissaohelp" class="form-text text-danger ms-1">Valor de comissão inválido.</div>}
+                                    {vazio.includes("comissao") && <div id="comissaohelp" className="form-text text-danger ms-1">Informe o valor de comissão.</div>}
+                                    {tipo.includes("comissao") && <div id="comissaohelp" className="form-text text-danger ms-1">Valor de comissão inválido.</div>}
                                 </div>
                                 <div className="col-md-4">
-                                    <label for="data" class="form-label">Data <span className="text-danger">*</span></label><br />
+                                    <label htmlFor="data" className="form-label">Data <span className="text-danger">*</span></label><br />
                                     <DatePicker
                                         calendarClassName="custom-datepicker-container"
                                         customInput={
@@ -499,8 +587,8 @@ const EditarVenda = () => {
                                     )}
 
                                 </div>
-                                <div className="col-md-4">
-                                    <label for="fornecedor" class="form-label">Proprietario <span className="text-danger">*</span></label>
+                                <div className="col-md-6">
+                                    <label htmlFor="fornecedor" className="form-label">Proprietario <span className="text-danger">*</span></label>
                                     <Select formatOptionLabel={formatOptionLabelFornecedor} isSearchable={true} className={`${hasError("clienteId") && "is-invalid"}`} id="fornecedor" name="clienteId" placeholder="Selecione o fornecedor" options={optionsFornecedor} onChange={handleProprietarioChange} value={optionsFornecedor.find(option => option.value === formData.clienteId) || null} isClearable={true}
                                         styles={getCustomStyles("clienteId")}
                                         filterOption={(option, inputValue) => {
@@ -516,8 +604,8 @@ const EditarVenda = () => {
                                     </Select>
                                     {vazio.includes("clienteId") && <div className="form-text text-danger ms-1">Informe o comprador.</div>}
                                 </div>
-                                <div className="col-md-4">
-                                    <label for="automovel" class="form-label">Automóvel <span className="text-danger">*</span></label>
+                                <div className="col-md-6">
+                                    <label htmlFor="automovel" className="form-label">Automóvel <span className="text-danger">*</span></label>
                                     <Select formatOptionLabel={formatOptionLabel} isSearchable={true} className={`${hasError("automovelId") && "is-invalid"}`} id="automovel" name="automovelId" placeholder="Selecione o automovel" options={optionsAutomovel} onChange={handleAutomovelChange} value={optionsAutomovel.find(option => option.value === formData.automovelId) || null} isClearable={true}
                                         styles={getCustomStyles("automovelId")}
                                         filterOption={(option, inputValue) => {
@@ -530,9 +618,124 @@ const EditarVenda = () => {
                                             return texto.includes(inputValue.toLowerCase());
                                         }}>
                                     </Select>
-                                    {vazio.includes("automovelId") && <div id="valorHelp" class="form-text text-danger ms-1">Informe o automóvel fornecido.</div>}
+                                    {vazio.includes("automovelId") && <div id="valorHelp" className="form-text text-danger ms-1">Informe o automóvel fornecido.</div>}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Card de Formas de Pagamento */}
+                    <div className="card mb-4 form-card">
+                        <div className="card-header d-flex align-items-center justify-content-between">
+                            <div className="d-flex align-items-center">
+                                <FaMoneyBillWave className="me-2" />
+                                Formas de Pagamento
+                            </div>
+                            {pagamentos.length < 3 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-primary btn-sm d-flex align-items-center"
+                                    onClick={adicionarPagamento}
+                                >
+                                    <FaPlus className="me-1" /> Adicionar
+                                </button>
+                            )}
+                        </div>
+                        <div className="card-body">
+                            {pagamentos.map((pagamento, index) => (
+                                <div key={index} className={`row g-3 align-items-end ${index > 0 ? 'mt-2 pt-3 border-top' : ''}`}>
+                                    <div className="col-md-4">
+                                        <label className="form-label">
+                                            Forma de Pagamento {index + 1} <span className="text-danger">*</span>
+                                        </label>
+                                        <Select
+                                            placeholder="Selecione..."
+                                            options={optionsFormaPagamento}
+                                            value={optionsFormaPagamento.find(o => o.value === pagamento.forma_pagamento) || null}
+                                            onChange={(option) => handlePagamentoChange(index, 'forma_pagamento', option ? option.value : '')}
+                                            isClearable={true}
+                                            styles={getCustomStyles(`pagamento_forma_${index}`)}
+                                            className={`${hasError(`pagamento_forma_${index}`) && "is-invalid"}`}
+                                        />
+                                        {vazio.includes(`pagamento_forma_${index}`) && (
+                                            <div className="form-text text-danger ms-1">Informe a forma de pagamento.</div>
+                                        )}
+                                    </div>
+                                    <div className="col-md-3">
+                                        <label className="form-label">
+                                            Valor (R$) <span className="text-danger">*</span>
+                                        </label>
+                                        <NumericFormat
+                                            className={`form-control ${hasError(`pagamento_valor_${index}`) && "is-invalid"}`}
+                                            placeholder="R$ 0,00"
+                                            value={pagamento.valor}
+                                            onValueChange={(values) => handlePagamentoChange(index, 'valor', values.value)}
+                                            thousandSeparator="."
+                                            decimalSeparator=","
+                                            prefix="R$ "
+                                            decimalScale={2}
+                                            fixedDecimalScale={true}
+                                            allowNegative={false}
+                                        />
+                                        {vazio.includes(`pagamento_valor_${index}`) && (
+                                            <div className="form-text text-danger ms-1">Informe o valor.</div>
+                                        )}
+                                    </div>
+                                    <div className="col-md-4">
+                                        <label className="form-label">Observação</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Ex: Entrada, Parcela..."
+                                            value={pagamento.observacao}
+                                            onChange={(e) => handlePagamentoChange(index, 'observacao', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-md-1 d-flex justify-content-center">
+                                        {pagamentos.length > 1 && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-danger btn-sm"
+                                                onClick={() => removerPagamento(index)}
+                                                title="Remover pagamento"
+                                            >
+                                                <FaTrash />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Resumo dos pagamentos */}
+                            <div className={`mt-4 p-3 rounded d-flex justify-content-between align-items-center ${pagamentosConferem ? 'bg-success bg-opacity-10 border border-success' : valorVenda > 0 ? 'bg-warning bg-opacity-10 border border-warning' : 'border'}`}>
+                                <div>
+                                    <span className="fw-bold">Soma dos Pagamentos: </span>
+                                    <span className={pagamentosConferem ? 'text-success fw-bold' : 'text-warning fw-bold'}>
+                                        {formatter.format(somaPagamentos)}
+                                    </span>
+                                    <span className="text-muted mx-2">/</span>
+                                    <span className="text-muted">
+                                        Valor da Venda: {formatter.format(valorVenda)}
+                                    </span>
+                                </div>
+                                <div>
+                                    {pagamentosConferem ? (
+                                        <span className="badge bg-success d-flex align-items-center">
+                                            <i className="bi bi-check-circle-fill me-1"></i> Valores conferem
+                                        </span>
+                                    ) : valorVenda > 0 ? (
+                                        <span className="badge bg-warning text-dark d-flex align-items-center">
+                                            <i className="bi bi-exclamation-triangle-fill me-1"></i> Diferença: {formatter.format(diferencaPagamentos)}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            {tipo.includes("pagamentos_soma") && (
+                                <div className="form-text text-danger ms-1 mt-2">
+                                    A soma dos pagamentos deve ser igual ao valor da venda.
+                                </div>
+                            )}
                         </div>
                     </div>
 
