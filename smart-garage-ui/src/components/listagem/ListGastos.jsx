@@ -179,7 +179,7 @@ const Gastos = () => {
                 </div>
 
                 <div className="card shadow-sm">
-                    <div className="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 className="mb-0">Vendas</h5>
                         <select name="periodo" id="periodo" className="form-select w-auto" onChange={handleInputChangePeriodo} value={periodo}>
                             <option value="todos">Todo o Período</option>
@@ -270,7 +270,7 @@ const Gastos = () => {
                         )}
                     </div>
 
-                    <div className="card-footer bg-light">
+                    <div className="card-footer">
                         {!loading && listaAtual.length > 0 && npage > 1 && (
                             <nav className="d-flex justify-content-center">
                                 <ul className="pagination mb-0">

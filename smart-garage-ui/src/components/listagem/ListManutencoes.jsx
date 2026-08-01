@@ -208,7 +208,7 @@ const Manutencao = () => {
                 </div>
 
                 <div className="card shadow-sm">
-                    <div className="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 className="mb-0">Manutenções</h5>
 
 
@@ -329,7 +329,7 @@ const Manutencao = () => {
                         )}
                     </div>
 
-                    <div className="card-footer bg-light">
+                    <div className="card-footer">
                         {!loading && listaAtual.length > 0 && npage > 1 && (
                             <nav className="d-flex justify-content-center">
                                 <ul className="pagination mb-0">

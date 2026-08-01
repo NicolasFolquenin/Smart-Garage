@@ -226,7 +226,7 @@ const Consignacoes = () => {
                 </div>
 
                 <div className="card shadow-sm mb-4">
-                    <div className="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 className="mb-0">Consignações {opcao === "ativas" ? "Ativas" : "Finalizadas"}</h5>
                         <div className="d-flex flex-column flex-md-row align-items-center gap-2 w-100 w-md-auto">
                             <select name="opcao" id="opcao" className="form-select w-auto" onChange={handleInputChangeOpcao}>
@@ -307,7 +307,7 @@ const Consignacoes = () => {
                         )}
                     </div>
 
-                    <div className="card-footer bg-light">
+                    <div className="card-footer">
                         {!loading && listaAtual.length > 0 && npage > 1 && (
                             <nav className="d-flex justify-content-center">
                                 <ul className="pagination mb-0">
