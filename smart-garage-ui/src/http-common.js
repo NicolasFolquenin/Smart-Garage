@@ -16,11 +16,16 @@ apiClient.interceptors.response.use(
     },
     (error) => {
         if (error.response) {
-                toast.error("Sua sessão expirou. Faça login novamente.");
-                AuthService.logout();
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 1500);
+            if (error.response.status === 401) {
+                // Não dispara o reload/logout automático se for a rota de verificação de login
+                // Isso evita um loop infinito (Reload -> fetchUser -> 401 -> Reload)
+                if (error.config && error.config.url && !error.config.url.includes('/login/me')) {
+                    toast.error("Sua sessão expirou. Faça login novamente.");
+                    AuthService.logout();
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                }
             } else if (error.response.status >= 500) {
                 toast.error("Ocorreu um erro no servidor. Tente novamente mais tarde.");
             } else if (error.response.status === 403) {

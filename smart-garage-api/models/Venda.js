@@ -17,7 +17,7 @@ const Venda = db.sequelize.define("venda", {
     },
     forma_pagamento: {
         type: db.Sequelize.ENUM('Cartão', 'Dinheiro', 'Financiamento', 'Pix'),
-        allowNull: false
+        allowNull: true
     },
     valor: {
         type: db.Sequelize.DECIMAL(10, 2),

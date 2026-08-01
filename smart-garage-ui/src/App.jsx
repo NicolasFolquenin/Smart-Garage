@@ -116,7 +116,7 @@ function App() {
               <Route path='/editar-venda/:id' element={<EditarVenda />}></Route>
               <Route path='/listagem/vendedores' element={<ListVendedores />}></Route>
               <Route path='/vendedor' element={<RegistroVendedor />}></Route>
-              <Route path="/gerenciar/comissoes" element={<GerenciarComissoes />}></Route>/
+              <Route path="/gerenciar/comissoes" element={<GerenciarComissoes />}></Route>
             </Route>
 
           </Routes>

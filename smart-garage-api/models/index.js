@@ -20,6 +20,7 @@ const Manutencao = require('./Manutencao');
 const Gerente = require('./Gerente');
 const Vendedor = require('./Vendedor');
 const Comissao = require('./Comissao');
+const PagamentoVenda = require('./PagamentoVenda');
 
 // RELAÇÃ0 1xN MARCA-AUTOMÓVEL
 Marca.hasMany(Automovel);
@@ -113,6 +114,10 @@ Gerente.belongsTo(Funcionario);
 Funcionario.hasOne(Vendedor);
 Vendedor.belongsTo(Funcionario);
 
+// RELAÇÃO 1XN VENDA-PAGAMENTOVENDA
+Venda.hasMany(PagamentoVenda);
+PagamentoVenda.belongsTo(Venda);
+
 module.exports = {
     sequelize, // <--- ADICIONADO AQUI! Agora o index.js da raiz consegue ler o .sync()
     Automovel,
@@ -133,5 +138,6 @@ module.exports = {
     Manutencao,
     Gerente,
     Vendedor,
-    Comissao
+    Comissao,
+    PagamentoVenda
 }

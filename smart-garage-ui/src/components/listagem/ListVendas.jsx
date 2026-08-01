@@ -144,6 +144,16 @@ const Vendas = () => {
         navigate(`/detalhes-venda/${id}`);
     }
 
+    const getBadgeVariant = (forma) => {
+        switch (forma) {
+            case 'Pix': return 'success';
+            case 'Cartão': return 'primary';
+            case 'Dinheiro': return 'warning';
+            case 'Financiamento': return 'info';
+            default: return 'secondary';
+        }
+    };
+
     return (
         <>
             <Header />
@@ -182,7 +192,7 @@ const Vendas = () => {
                 </div>
 
                 <div className="card shadow-sm">
-                    <div className="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div className="card-header border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 className="mb-0">Vendas</h5>
                         <div className="d-flex flex-column flex-md-row align-items-center gap-2 w-100 w-md-auto">
                             <select name="origem" id="origem" className="form-select w-auto" onChange={handleInputChangeOrigem} value={origem}>
@@ -212,12 +222,12 @@ const Vendas = () => {
                             <table className="table mt-4 table-hover">
                                 <thead>
                                     <tr>
-                                        <th scope="col" className='text-end pe-5' style={{ width: '10%' }}>ID</th>
-                                        <th scope="col" className='ps-5' style={{ width: '25%' }}>Data</th>
-                                        <th scope="col" className='' style={{ width: '35%' }}>Automóvel</th>
-                                        <th scope="col" className='text-center' style={{ width: '10%' }}>Valor</th>
-                                        <th scope="col" className="text-center" style={{ width: '20%' }}>Ações
-                                        </th>
+                                        <th scope="col" className='text-end pe-5' style={{ width: '8%' }}>ID</th>
+                                        <th scope="col" className='ps-5' style={{ width: '15%' }}>Data</th>
+                                        <th scope="col" className='' style={{ width: '25%' }}>Automóvel</th>
+                                        <th scope="col" className='text-center' style={{ width: '20%' }}>Pagamento</th>
+                                        <th scope="col" className='text-end' style={{ width: '12%' }}>Valor</th>
+                                        <th scope="col" className="text-center" style={{ width: '20%' }}>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -233,6 +243,21 @@ const Vendas = () => {
                                                 <td>
                                                     <div className="fw-bold">{`${nomeMarca?.nome ?? ''} ${nomeModelo?.nome ?? ''}`}</div>
                                                     <small className="text-muted">{`Placa: ${auto?.placa}`}</small>
+                                                </td>
+                                                <td className="text-center">
+                                                    {d.pagamento_vendas && d.pagamento_vendas.length > 0 ? (
+                                                        <div className="d-flex flex-wrap gap-1 justify-content-center">
+                                                            {d.pagamento_vendas.map((p, idx) => (
+                                                                <span key={idx} className={`badge bg-${getBadgeVariant(p.forma_pagamento)} ${getBadgeVariant(p.forma_pagamento) === 'warning' ? 'text-dark' : ''}`}>
+                                                                    {p.forma_pagamento}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : d.forma_pagamento ? (
+                                                        <span className="badge bg-secondary">{d.forma_pagamento}</span>
+                                                    ) : (
+                                                        <span className="text-muted">—</span>
+                                                    )}
                                                 </td>
                                                 <td className="text-dark fw-bold text-end">{d.valor && `${parseFloat(d.valor).toLocaleString('pt-BR', {
                                                     style: 'currency',
@@ -273,7 +298,7 @@ const Vendas = () => {
 
                     </div>
 
-                    <div className="card-footer bg-light">
+                    <div className="card-footer border-top">
                         {!loading && listaAtual.length > 0 && npage > 1 && (
                             <nav className="d-flex justify-content-center">
                                 <ul className="pagination mb-0">

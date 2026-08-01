@@ -106,6 +106,23 @@ const DetalhesVenda = () => {
     const cidadeInfo = cidade?.find(c => c.id === enderecoInfo?.cidadeId)
     const estadoInfo = estado?.find(e => e.id === cidadeInfo?.estadoId)
 
+    // Obter pagamentos (nova tabela) ou fallback para campo antigo
+    const pagamentos = detalhes.pagamento_vendas && detalhes.pagamento_vendas.length > 0
+        ? detalhes.pagamento_vendas
+        : detalhes.forma_pagamento
+            ? [{ forma_pagamento: detalhes.forma_pagamento, valor: detalhes.valor, observacao: null }]
+            : [];
+
+    const getBadgeVariant = (forma) => {
+        switch (forma) {
+            case 'Pix': return 'success';
+            case 'Cartão': return 'primary';
+            case 'Dinheiro': return 'warning';
+            case 'Financiamento': return 'info';
+            default: return 'secondary';
+        }
+    };
+
     return (
         <>
             <Header />
@@ -185,6 +202,59 @@ const DetalhesVenda = () => {
                                     <ListGroup.Item><strong>Valor:</strong> <span>{formatter.format(detalhes.valor)}</span></ListGroup.Item>
                                     <ListGroup.Item><strong>Comissão:</strong> <span>{formatter.format(detalhes.comissao)}</span></ListGroup.Item>
                                 </ListGroup>
+                            </Card.Body>
+                        </Card>
+                    </div>
+
+                    {/* Card de Formas de Pagamento */}
+                    <div>
+                        <Card className="shadow-sm">
+                            <Card.Body>
+                                <h5 className="card-title d-flex align-items-center border-bottom pb-2 mb-3">
+                                    <i className="bi bi-wallet2 text-primary me-2"></i>
+                                    Formas de Pagamento
+                                </h5>
+                                {pagamentos.length > 0 ? (
+                                    <div className="table-responsive">
+                                        <table className="table table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ width: '5%' }}>#</th>
+                                                    <th style={{ width: '30%' }}>Forma</th>
+                                                    <th style={{ width: '25%' }} className="text-end">Valor</th>
+                                                    <th style={{ width: '40%' }}>Observação</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {pagamentos.map((p, index) => (
+                                                    <tr key={index}>
+                                                        <td>{index + 1}</td>
+                                                        <td>
+                                                            <Badge bg={getBadgeVariant(p.forma_pagamento)} className="fs-6 fw-normal">
+                                                                {p.forma_pagamento}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="text-end fw-bold">{formatter.format(p.valor)}</td>
+                                                        <td className="text-muted">{p.observacao || '—'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            {pagamentos.length > 1 && (
+                                                <tfoot>
+                                                    <tr className="table-light">
+                                                        <td colSpan="2" className="fw-bold text-end">Total:</td>
+                                                        <td className="text-end fw-bold">
+                                                            {formatter.format(pagamentos.reduce((acc, p) => acc + parseFloat(p.valor || 0), 0))}
+                                                        </td>
+                                                        <td></td>
+                                                    </tr>
+                                                </tfoot>
+                                            )}
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <p className="text-muted mb-0">Nenhuma forma de pagamento registrada.</p>
+                                )}
                             </Card.Body>
                         </Card>
                     </div>

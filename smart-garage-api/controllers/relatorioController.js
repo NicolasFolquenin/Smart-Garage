@@ -10,7 +10,8 @@ exports.gerarRelatorio = async (req, res) => {
                 where: { data: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
                 include: [
                     { model: Entidade.Automovel, as: 'automovel' },
-                    { model: Entidade.Cliente, as: 'cliente' }
+                    { model: Entidade.Cliente, as: 'cliente' },
+                    { model: Entidade.PagamentoVenda, as: 'pagamento_vendas' }
                 ],
                 order: [['data', 'DESC']]
             });
@@ -67,7 +68,8 @@ exports.gerarRelatorio = async (req, res) => {
                 where: { data: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
                 include: [
                     { model: Entidade.Automovel, as: 'automovel' },
-                    { model: Entidade.Cliente, as: 'cliente' }
+                    { model: Entidade.Cliente, as: 'cliente' },
+                    { model: Entidade.PagamentoVenda, as: 'pagamento_vendas' }
                 ],
                 order: [['data', 'DESC']]
             });
