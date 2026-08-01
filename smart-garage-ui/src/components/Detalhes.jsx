@@ -23,6 +23,7 @@ const Detalhes = () => {
     const [showModal, setShowModal] = useState(false);
 
     const navigate = useNavigate();
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
     const consulta = useCallback(() => {
         AutomovelDataService.getById(id)
@@ -92,7 +93,7 @@ const Detalhes = () => {
                         {
                             automovel.imagem ? (
                                 <img
-                                    src={automovel.imagem !== null ? `http://localhost:3000/${automovel.imagem}` : "/fotos/no-photos.png"}
+                                    src={automovel.imagem !== null ? `${apiUrl}/${automovel.imagem}` : "/fotos/no-photos.png"}
                                     alt="Imagem do Automóvel"
                                     className="img-fluid rounded shadow-lg w-100"
                                     style={{ objectFit: 'cover', maxHeight: '500px' }}
