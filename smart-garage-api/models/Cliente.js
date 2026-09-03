@@ -18,7 +18,7 @@ const Cliente = db.sequelize.define('cliente', {
     },
     email: {
         type: db.Sequelize.STRING(50),
-        allowNull: false,
+        allowNull: true,
         unique: 'email_unique_idx'
     },
     nome: {

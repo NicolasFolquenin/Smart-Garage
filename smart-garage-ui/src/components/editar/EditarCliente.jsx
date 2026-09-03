@@ -80,7 +80,6 @@ const EditarCliente = () => {
 
         // --- 1. VALIDAÇÃO DOS CAMPOS COMUNS ---
         if (!cliente.nome) vazioErros.push("nome");
-        if (!cliente.email) vazioErros.push("email");
         if (!cliente.telefone) vazioErros.push("telefone");
         if (cliente.telefone && isNaN(cliente.telefone)) tamanhoErros.push("telefone");
 
@@ -149,8 +148,13 @@ const EditarCliente = () => {
             return;
         }
 
+        const clientePayload = {
+            ...cliente,
+            email: (cliente.email && cliente.email.trim()) ? cliente.email.trim() : null
+        };
+
         const dataPayload = {
-            cliente,
+            cliente: clientePayload,
             fisica: opcao === 'fisica' ? fisica : null,
             juridica: opcao === 'juridica' ? juridica : null,
             endereco,
@@ -264,7 +268,7 @@ const EditarCliente = () => {
                                 </Form.Group>
                             </Col>
                             <Col md={4}>
-                                <Form.Group><Form.Label>Email <span className="text-danger">*</span></Form.Label><Form.Control className={`form-control ${hasError("email") && "is-invalid"}`} name="email" type="email" value={cliente.email} onChange={handleInputChange(setCliente)} />
+                                <Form.Group><Form.Label>Email</Form.Label><Form.Control className={`form-control ${hasError("email") && "is-invalid"}`} name="email" type="email" value={cliente.email || ''} onChange={handleInputChange(setCliente)} />
                                     {vazio.includes("email") && <div className="invalid-feedback">Informe o email.</div>}
                                 </Form.Group>
                             </Col>

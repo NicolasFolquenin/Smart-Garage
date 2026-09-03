@@ -227,7 +227,6 @@ const Cliente = () => {
 
         // Vazio
         if (!cliente.nome) vazioErros.push("nome");
-        if (!cliente.email) vazioErros.push("email");
         if (!cliente.telefone) vazioErros.push("telefone");
 
         // if (!fisica.cpf) {
@@ -273,7 +272,6 @@ const Cliente = () => {
 
         // Vazio
         if (!cliente.nome) vazioErros.push("nome");
-        if (!cliente.email) vazioErros.push("email");
         if (!cliente.telefone) vazioErros.push("telefone");
 
         if (!juridica.nome_responsavel) vazioErros.push("nome_responsavel");
@@ -356,21 +354,25 @@ const Cliente = () => {
                 throw new Error(verificacao.data.mensagemErro);
             }
 
+            const emailTratado = (cliente.email && cliente.email.trim()) ? cliente.email.trim() : null;
+
             var dataCliente = {
                 data_cadastro: new Date(),
                 nome: cliente.nome,
-                email: cliente.email,
+                email: emailTratado,
                 telefone: cliente.telefone
             }
 
-            const verificacaoemail = await ClienteDataService.duplicidade({
-                email: cliente.email
-            })
+            if (emailTratado) {
+                const verificacaoemail = await ClienteDataService.duplicidade({
+                    email: emailTratado
+                })
 
-            if (verificacaoemail.data.erro) {
-                setErro(verificacaoemail.data.erro);
-                setMensagemErro(verificacaoemail.data.mensagemErro);
-                throw new Error(verificacaoemail.data.mensagemErro);
+                if (verificacaoemail.data.erro) {
+                    setErro(verificacaoemail.data.erro);
+                    setMensagemErro(verificacaoemail.data.mensagemErro);
+                    throw new Error(verificacaoemail.data.mensagemErro);
+                }
             }
 
             const clienteResp = await ClienteDataService.create(dataCliente)
@@ -513,21 +515,25 @@ const Cliente = () => {
                 throw new Error(verificacao.data.mensagemErro);
             }
 
+            const emailTratado = (cliente.email && cliente.email.trim()) ? cliente.email.trim() : null;
+
             var dataCliente = {
                 data_cadastro: new Date(),
                 nome: cliente.nome,
-                email: cliente.email,
+                email: emailTratado,
                 telefone: cliente.telefone
             }
 
-            const verificacaoemail = await ClienteDataService.duplicidade({
-                email: cliente.email
-            })
+            if (emailTratado) {
+                const verificacaoemail = await ClienteDataService.duplicidade({
+                    email: emailTratado
+                })
 
-            if (verificacaoemail.data.erro) {
-                setErro(verificacaoemail.data.erro);
-                setMensagemErro(verificacaoemail.data.mensagemErro);
-                throw new Error(verificacaoemail.data.mensagemErro);
+                if (verificacaoemail.data.erro) {
+                    setErro(verificacaoemail.data.erro);
+                    setMensagemErro(verificacaoemail.data.mensagemErro);
+                    throw new Error(verificacaoemail.data.mensagemErro);
+                }
             }
 
             const clienteJuridicaResp = await ClienteDataService.create(dataCliente)
@@ -740,7 +746,7 @@ const Cliente = () => {
                                 </div>
 
                                 <div class="col-md-4 ">
-                                    <label for="valor" class="form-label">Email <span className="text-danger">*</span></label>
+                                    <label for="valor" class="form-label">Email</label>
                                     <input type="email" className={`form-control ${hasError("email") && "is-invalid"}`} id="email" name="email" aria-describedby="emailHelp" value={cliente.email} onChange={handleInputChangeCliente} />
                                     {vazio.includes("email") && <div className="invalid-feedback">Informe o email.</div>}
                                 </div>
@@ -847,7 +853,7 @@ const Cliente = () => {
                                 </div>
 
                                 <div class="col-md-4 ">
-                                    <label for="valor" class="form-label">Email <span className="text-danger">*</span></label>
+                                    <label for="valor" class="form-label">Email</label>
                                     <input type="email" className={`form-control ${hasError("email") && "is-invalid"}`} id="email" name="email" aria-describedby="emailHelp" value={cliente.email} onChange={handleInputChangeCliente} />
 
                                     {vazio.includes("email") && <div className="invalid-feedback">Informe o email.</div>}

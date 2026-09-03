@@ -49,10 +49,12 @@ exports.createCliente = async (req, res) => {
 
     try {
 
+        const emailTratado = (email && typeof email === 'string' && email.trim() !== '') ? email.trim() : null;
+
         const cliente = await Entidade.Cliente.create({
 
             data_cadastro: data_cadastro,
-            email: email,
+            email: emailTratado,
             ativo: true,
             nome: nome,
             telefone: telefone
@@ -68,9 +70,13 @@ exports.verificarDuplicidade = async (req, res) => {
 
     const { email } = req.body;
 
+    if (!email || (typeof email === 'string' && email.trim() === '')) {
+        return res.status(200).send({ erro: false });
+    }
+
     const emailExistente = await Entidade.Cliente.findOne({
         where: {
-            [Op.or]: [{ email }]
+            [Op.or]: [{ email: email.trim() }]
         }
     });
 
@@ -133,6 +139,10 @@ exports.update = async (req, res) => {
     const t = await sequelize.transaction();
 
     try {
+
+        if (cliente && 'email' in cliente) {
+            cliente.email = (cliente.email && typeof cliente.email === 'string' && cliente.email.trim() !== '') ? cliente.email.trim() : null;
+        }
 
         await Entidade.Cliente.update(cliente, { where: { id }, transaction: t });
 
