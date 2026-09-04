@@ -8,7 +8,6 @@ import ModeloDataService from "../services/modeloDataService";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import HelpPopover from './HelpPopover';
-import ModalConfirmacao from './modais/ModalConfirmacao';
 import VendaDataService from "../services/vendaDataService";
 import { useEstoque } from "../hooks/useEstoque";
 
@@ -20,41 +19,12 @@ const Estoque = () => {
     const [opcao, setOpcao] = useState('ativos');
     const [search, setSearch] = useState("");
 
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [automovelParaExcluir, setAutomovelParaExcluir] = useState(null);
-    const [deleteLoading, setDeleteLoading] = useState(false);
-    const [deleteError, setDeleteError] = useState("");
-
     const handleInputChangeOpcao = event => {
         const { value } = event.target;
         setOpcao(value);
     }
 
-    const { automoveisFiltrados, loading, error, marca, modelo, removerAutomovelLocal } = useEstoque(opcao, search);
-
-    const handleAbrirModalExcluir = (auto, nomeMarca, nomeModelo) => {
-        setAutomovelParaExcluir({ ...auto, nomeMarca, nomeModelo });
-        setDeleteError("");
-        setShowDeleteModal(true);
-    };
-
-    const handleConfirmarExclusao = async () => {
-        if (!automovelParaExcluir) return;
-
-        setDeleteLoading(true);
-        setDeleteError("");
-        try {
-            await AutomovelDataService.delete(automovelParaExcluir.id);
-            removerAutomovelLocal(automovelParaExcluir.id);
-            setShowDeleteModal(false);
-            setAutomovelParaExcluir(null);
-        } catch (err) {
-            console.error("Erro ao excluir automóvel:", err);
-            setDeleteError(err.response?.data?.mensagemErro || "Erro ao excluir automóvel do estoque.");
-        } finally {
-            setDeleteLoading(false);
-        }
-    };
+    const { automoveisFiltrados, loading, error, marca, modelo } = useEstoque(opcao, search);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -140,18 +110,9 @@ const Estoque = () => {
                                                 currency: 'BRL'
                                             })}`}
                                         </h4>
-                                        <div className="d-flex gap-2 mt-auto">
-                                            <button onClick={() => navigate(`/detalhes/${auto.id}`)} className="btn btn-primary flex-grow-1">
-                                                Ver Detalhes
-                                            </button>
-                                            <button
-                                                onClick={() => handleAbrirModalExcluir(auto, marca2?.nome, modelo2?.nome)}
-                                                className="btn btn-outline-danger"
-                                                title="Excluir automóvel do estoque"
-                                            >
-                                                <i className="bi bi-trash-fill"></i>
-                                            </button>
-                                        </div>
+                                        <button onClick={() => navigate(`/detalhes/${auto.id}`)} className="btn btn-primary mt-auto">
+                                            Ver Detalhes
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -193,11 +154,8 @@ const Estoque = () => {
                                             <li className="mb-1">
                                                 <strong>Busca Inteligente:</strong> O campo de busca permite encontrar automóveis rapidamente por marca, modelo, ano ou placa.
                                             </li>
-                                            <li className="mb-1">
-                                                <strong>Ver Detalhes:</strong> Clicar no botão "Ver Detalhes" de qualquer automóvel leva a uma página com todas as suas informações, histórico e opções de negociação (como Vender ou Editar).
-                                            </li>
                                             <li>
-                                                <strong>Excluir do Estoque:</strong> O botão com ícone de lixeira no card do veículo permite removê-lo diretamente do estoque e do sistema, sem precisar simular uma venda.
+                                                <strong>Ver Detalhes:</strong> Clicar no botão "Ver Detalhes" de qualquer automóvel leva a uma página com todas as suas informações, histórico e opções de negociação (como Vender, Editar ou Excluir).
                                             </li>
                                         </ul>
                                     </>
@@ -246,43 +204,6 @@ const Estoque = () => {
                         </ul>
                     </nav>
                 )}
-
-                <ModalConfirmacao
-                    show={showDeleteModal}
-                    onHide={() => {
-                        if (!deleteLoading) {
-                            setShowDeleteModal(false);
-                            setAutomovelParaExcluir(null);
-                            setDeleteError("");
-                        }
-                    }}
-                    onConfirm={handleConfirmarExclusao}
-                    loading={deleteLoading}
-                    titulo="Confirmar Exclusão do Veículo"
-                    botao="Confirmar Exclusão"
-                    corpo={
-                        <>
-                            {deleteError && (
-                                <div className="alert alert-danger mb-3" role="alert">
-                                    <i className="bi bi-exclamation-triangle-fill me-2"></i>{deleteError}
-                                </div>
-                            )}
-                            <p>
-                                Você tem certeza que deseja excluir o veículo{" "}
-                                <strong>
-                                    {automovelParaExcluir?.nomeMarca} {automovelParaExcluir?.nomeModelo}{" "}
-                                    {automovelParaExcluir?.placa ? `(Placa: ${automovelParaExcluir.placa})` : ''}
-                                </strong>{" "}
-                                do estoque?
-                            </p>
-                            <p className="text-danger mb-0">
-                                <small>
-                                    <strong>Atenção:</strong> Esta ação removerá o automóvel e seus registros vinculados (como manutenções e gastos). Esta operação não poderá ser desfeita.
-                                </small>
-                            </p>
-                        </>
-                    }
-                />
 
             </div>
         </>
