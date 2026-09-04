@@ -163,7 +163,7 @@ const Detalhes = () => {
                             </div>
                             <p className="lead text-muted">ID do Automóvel: {automovel && automovel.id}</p>
 
-                            <h2 className="text-primary my-4">{automovel && automovel.valor && `${parseFloat(automovel.valor).toLocaleString('pt-BR', {
+                            <h2 className="text-primary valor-destaque my-4">{automovel && automovel.valor && `${parseFloat(automovel.valor).toLocaleString('pt-BR', {
                                 style: 'currency',
                                 currency: 'BRL'
                             })}`}</h2>

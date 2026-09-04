@@ -39,6 +39,40 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
     font-weight: 700;
 }
 
+/* Visibilidade e contraste de textos e valores (Modo Claro e Escuro) */
+.text-dark,
+td.text-dark {
+    color: var(--text-dark) !important;
+}
+
+.text-primary,
+h1.text-primary,
+h2.text-primary,
+h3.text-primary,
+h4.text-primary,
+.valor-destaque {
+    color: var(--primary-blue) !important;
+}
+
+[data-bs-theme="dark"] .text-dark,
+[data-bs-theme="dark"] td.text-dark {
+    color: var(--text-dark) !important;
+}
+
+[data-bs-theme="dark"] .text-primary,
+[data-bs-theme="dark"] h1.text-primary,
+[data-bs-theme="dark"] h2.text-primary,
+[data-bs-theme="dark"] h3.text-primary,
+[data-bs-theme="dark"] h4.text-primary,
+[data-bs-theme="dark"] .text-primary *,
+[data-bs-theme="dark"] .valor-destaque {
+    color: #38BDF8 !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: #94a3b8 !important;
+}
+
 .navbar-color {
     background-color: var(--card-bg) !important;
     border-bottom: 1px solid var(--border-light);
