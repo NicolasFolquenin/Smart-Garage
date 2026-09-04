@@ -15,6 +15,7 @@ router.get('/renavam/:renavam', automovelController.getAutomovelByRenavam);
 router.get('/placa/:placa', automovelController.getAutomovelByPlaca);
 router.get('/detalhes/:id', automovelController.getAutomovelDetalhesById);
 router.get('/:id', automovelController.getAutomovelById);
-router.put('/:id', upload.single("file"), automovelController.updateAutomovel)
+router.put('/:id', upload.single("file"), automovelController.updateAutomovel);
+router.delete('/:id', automovelController.deleteAutomovel);
 
 module.exports = router;

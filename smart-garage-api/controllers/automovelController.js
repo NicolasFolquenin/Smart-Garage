@@ -2,6 +2,8 @@ const { where } = require("sequelize");
 const Entidade = require("../models/index");
 const { Op } = require("sequelize");
 const { response } = require("express");
+const fs = require("fs");
+const path = require("path");
 
 const handleServerError = (res, error) => {
     console.error(error);
@@ -296,5 +298,89 @@ exports.verificarStatus = async (req, res) => {
 
     } catch (error) {
         handleServerError(res, error);
+    }
+};
+
+exports.deleteAutomovel = async (req, res) => {
+    const id = req.params.id;
+    const t = await Entidade.sequelize.transaction();
+
+    try {
+        const automovel = await Entidade.Automovel.findByPk(id, { transaction: t });
+
+        if (!automovel) {
+            await t.rollback();
+            return res.status(404).send({ erro: true, mensagemErro: "Automóvel não encontrado." });
+        }
+
+        // Verificar se possui venda associada
+        const vendaAssociada = await Entidade.Venda.findOne({
+            where: { automovelId: id },
+            transaction: t
+        });
+
+        if (vendaAssociada) {
+            await t.rollback();
+            return res.status(400).send({
+                erro: true,
+                mensagemErro: "Não é possível excluir um automóvel com venda registrada."
+            });
+        }
+
+        // Excluir registros vinculados (gastos e manutenções)
+        await Entidade.Gasto.destroy({
+            where: { automovelId: id },
+            transaction: t
+        });
+
+        await Entidade.Manutencao.destroy({
+            where: { automovelId: id },
+            transaction: t
+        });
+
+        // Excluir operação de entrada vinculada (Compra, Consignacao ou Troca)
+        await Entidade.Compra.destroy({
+            where: { automovelId: id },
+            transaction: t
+        });
+
+        await Entidade.Consignacao.destroy({
+            where: { automovelId: id },
+            transaction: t
+        });
+
+        await Entidade.Troca.destroy({
+            where: { automovelId: id },
+            transaction: t
+        });
+
+        // Excluir o automóvel
+        await Entidade.Automovel.destroy({
+            where: { id: id },
+            transaction: t
+        });
+
+        await t.commit();
+
+        // Remover imagem física se existir
+        if (automovel.imagem) {
+            try {
+                const fullPath = path.resolve(automovel.imagem);
+                if (fs.existsSync(fullPath)) {
+                    fs.unlinkSync(fullPath);
+                }
+            } catch (imgError) {
+                console.warn("Aviso ao remover imagem do automóvel excluído:", imgError.message);
+            }
+        }
+
+        return res.status(200).send({
+            sucesso: true,
+            mensagem: "Automóvel excluído do estoque com sucesso."
+        });
+
+    } catch (erro) {
+        await t.rollback();
+        handleServerError(res, erro);
     }
 };

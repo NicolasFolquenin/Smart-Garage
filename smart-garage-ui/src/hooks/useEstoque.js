@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import AutomovelDataService from "../services/automovelDataService";
 import MarcaDataService from "../services/marcaDataService";
 import ModeloDataService from "../services/modeloDataService";
@@ -13,7 +13,7 @@ export const useEstoque = (opcao, search) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
+    const carregarDados = useCallback(() => {
         setLoading(true);
         Promise.all([
             AutomovelDataService.getByAtivo(),
@@ -33,6 +33,15 @@ export const useEstoque = (opcao, search) => {
         }).finally(() => {
             setLoading(false);
         });
+    }, []);
+
+    useEffect(() => {
+        carregarDados();
+    }, [carregarDados]);
+
+    const removerAutomovelLocal = useCallback((id) => {
+        setAutomovel(prev => prev.filter(a => a.id !== id));
+        setAutomovelInativo(prev => prev.filter(a => a.id !== id));
     }, []);
 
     const automoveisFiltrados = useMemo(() => {
@@ -73,6 +82,8 @@ export const useEstoque = (opcao, search) => {
         loading,
         error,
         marca,
-        modelo
+        modelo,
+        recarregarEstoque: carregarDados,
+        removerAutomovelLocal
     };
 };

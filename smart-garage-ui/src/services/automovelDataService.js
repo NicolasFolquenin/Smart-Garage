@@ -43,7 +43,11 @@ class AutomovelDataService {
     }
 
     update(id, data, config) {
-        return http.put(`/api/automovel/${id}`, data, config)
+        return http.put(`/api/automovel/${id}`, data, config);
+    }
+
+    delete(id) {
+        return http.delete(`/api/automovel/${id}`);
     }
 
 }

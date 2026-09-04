@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import Header from "./Header";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import AutomovelDataService from "../services/automovelDataService";
 import React from "react";
 import { useCallback, useState } from "react";
 import ModalVenda from "./modais/ModalVenda";
+import ModalConfirmacao from "./modais/ModalConfirmacao";
 import ModeloDataService from "../services/modeloDataService";
 import MarcaDataService from "../services/marcaDataService";
 import { FaCar } from "react-icons/fa";
@@ -21,9 +22,27 @@ const Detalhes = () => {
     const [loading, setLoading] = useState(true);
 
     const [showModal, setShowModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
 
     const navigate = useNavigate();
     const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+    const handleExcluirAutomovel = async () => {
+        setDeleteLoading(true);
+        setDeleteError("");
+        try {
+            await AutomovelDataService.delete(id);
+            setShowDeleteModal(false);
+            navigate('/estoque');
+        } catch (error) {
+            console.error("Erro ao excluir automóvel:", error);
+            setDeleteError(error.response?.data?.mensagemErro || "Erro ao excluir automóvel do estoque.");
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
 
     const consulta = useCallback(() => {
         AutomovelDataService.getById(id)
@@ -131,6 +150,9 @@ const Detalhes = () => {
                                                 <li className="mb-1">
                                                     <strong>Vender:</strong> Inicia o processo de venda para este automóvel, abrindo um modal para você identificar o cliente (comprador). Esta opção só está disponível para veículos ativos.
                                                 </li>
+                                                <li className="mb-1">
+                                                    <strong>Excluir:</strong> Remove o veículo definitivamente do estoque e do sistema, sem necessidade de realizar uma venda ou cancelar operações de entrada.
+                                                </li>
                                                 <li>
                                                     <strong>Voltar:</strong> Retorna para a tela de listagem do estoque.
                                                 </li>
@@ -166,7 +188,7 @@ const Detalhes = () => {
                             <hr />
 
                             {/* Botões de Ação */}
-                            <div className="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
+                            <div className="d-grid gap-2 d-md-flex justify-content-md-start mt-4 flex-wrap">
                                 <button onClick={() => navigate(`/editar-automovel/${automovel.id}`)} className="btn btn-primary btn-lg px-4 me-md-2">
                                     <i className="bi bi-pencil-fill me-2"></i>Editar
                                 </button>
@@ -175,8 +197,11 @@ const Detalhes = () => {
                                         <i className="bi bi-tag-fill me-2"></i>Vender
                                     </button>
                                 }
+                                <button onClick={() => { setDeleteError(""); setShowDeleteModal(true); }} className="btn btn-outline-danger btn-lg px-4 me-md-2" title="Excluir do Estoque">
+                                    <i className="bi bi-trash-fill me-2"></i>Excluir
+                                </button>
                                 <button onClick={() => navigate('/estoque')} className="btn btn-outline-secondary btn-lg px-4">
-                                    <i class="bi bi-arrow-return-left me-2"></i>Voltar
+                                    <i className="bi bi-arrow-return-left me-2"></i>Voltar
                                 </button>
                             </div>
                         </div>
@@ -188,6 +213,26 @@ const Detalhes = () => {
                     onHide={() => setShowModal(false)}
                     venda={vendaLocalStorage}
                     automovelId={automovel && automovel.id}
+                />
+
+                <ModalConfirmacao
+                    show={showDeleteModal}
+                    onHide={() => { if (!deleteLoading) { setShowDeleteModal(false); setDeleteError(""); } }}
+                    onConfirm={handleExcluirAutomovel}
+                    loading={deleteLoading}
+                    titulo="Confirmar Exclusão do Veículo"
+                    botao="Confirmar Exclusão"
+                    corpo={
+                        <>
+                            {deleteError && (
+                                <div className="alert alert-danger mb-3" role="alert">
+                                    <i className="bi bi-exclamation-triangle-fill me-2"></i>{deleteError}
+                                </div>
+                            )}
+                            <p>Você tem certeza que deseja excluir o veículo <strong>{marcaNome?.nome} {modeloNome?.nome} {automovel?.placa ? `(Placa: ${automovel.placa})` : ''}</strong> do estoque?</p>
+                            <p className="text-danger mb-0"><small><strong>Atenção:</strong> Esta ação removerá o automóvel e seus registros associados (como gastos ou manutenções). Esta operação não poderá ser desfeita.</small></p>
+                        </>
+                    }
                 />
 
             </div>
