@@ -26,7 +26,7 @@ exports.gerarRelatorio = async (req, res) => {
 
                 if (origem === 'Compra') {
                     const compra = await Entidade.Compra.findOne({ where: { automovelId: venda.automovelId } });
-                    custo = parseFloat(compra?.valor || 0);
+                    custo = parseFloat(compra?.valor || venda.automovel?.custo_aquisicao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
 
                 } else if (origem === 'Troca') {
@@ -38,7 +38,7 @@ exports.gerarRelatorio = async (req, res) => {
                             ]
                         }
                     });
-                    custo = parseFloat(troca?.valor_aquisicao || 0);
+                    custo = parseFloat(troca?.valor_aquisicao || venda.automovel?.custo_aquisicao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
 
                 } else if (origem === 'Consignacao') {
@@ -46,6 +46,7 @@ exports.gerarRelatorio = async (req, res) => {
                     custo = parseFloat(consignacao?.valor || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 } else {
+                    custo = parseFloat(venda.automovel?.custo_aquisicao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 }
 
@@ -93,7 +94,7 @@ exports.gerarRelatorio = async (req, res) => {
 
                 if (origem === 'Compra') {
                     const compra = await Entidade.Compra.findOne({ where: { automovelId: venda.automovelId } });
-                    custo = parseFloat(compra?.valor || 0);
+                    custo = parseFloat(compra?.valor || venda.automovel?.custo_aquisicao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 } else if (origem === 'Troca') {
                     const troca = await Entidade.Troca.findOne({
@@ -104,13 +105,14 @@ exports.gerarRelatorio = async (req, res) => {
                             ]
                         }
                     });
-                    custo = parseFloat(troca?.valor_aquisicao || 0);
+                    custo = parseFloat(troca?.valor_aquisicao || venda.automovel?.custo_aquisicao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 } else if (origem === 'Consignacao') {
                     const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: venda.automovelId } });
                     custo = parseFloat(consignacao?.valor || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 } else {
+                    custo = parseFloat(venda.automovel?.custo_aquisicao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 }
 

@@ -183,6 +183,18 @@ const Detalhes = () => {
 
                                 <dt className="col-sm-4">Combustível</dt>
                                 <dd className="col-sm-8">{automovel && automovel.combustivel} </dd>
+
+                                <dt className="col-sm-4">Origem</dt>
+                                <dd className="col-sm-8">{automovel && (automovel.origem || 'N/A')}</dd>
+
+                                {automovel && automovel.custo_aquisicao && (
+                                    <>
+                                        <dt className="col-sm-4">Custo Aquisição</dt>
+                                        <dd className="col-sm-8 text-muted">
+                                            {parseFloat(automovel.custo_aquisicao).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                        </dd>
+                                    </>
+                                )}
                             </dl>
 
                             <hr />

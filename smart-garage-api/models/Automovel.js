@@ -33,7 +33,7 @@ const Automovel = db.sequelize.define('automovel', {
         allowNull: false
     },
     origem: {
-        type: db.Sequelize.ENUM('Compra', 'Consignacao', 'Troca'),
+        type: db.Sequelize.ENUM('Compra', 'Consignacao', 'Troca', 'Estoque Inicial'),
         allowNull: false
     },
     placa: {
@@ -49,6 +49,10 @@ const Automovel = db.sequelize.define('automovel', {
     valor: {
         type: db.Sequelize.DECIMAL(10, 2),
         allowNull: false
+    },
+    custo_aquisicao: {
+        type: db.Sequelize.DECIMAL(10, 2),
+        allowNull: true
     },
     imagem: {
         type: db.Sequelize.STRING

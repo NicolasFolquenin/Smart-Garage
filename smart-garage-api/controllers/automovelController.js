@@ -31,6 +31,7 @@ exports.createAutomovel = async (req, res) => {
         placa,
         renavam,
         valor,
+        custo_aquisicao,
         marcaId,
         modeloId
     } = req.body;
@@ -53,6 +54,7 @@ exports.createAutomovel = async (req, res) => {
             placa: placaUpperCase,
             renavam: renavam,
             valor: valor,
+            custo_aquisicao: custo_aquisicao || null,
             marcaId: marcaId,
             imagem: imagemPath,
             modeloId: modeloId

@@ -67,7 +67,8 @@ const gerarPDF = async (dados, sumario, filtros, graficoElement) => {
 
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
-        doc.text('Rodrigo Veículos', pageWidth / 2, margin.top, { align: 'center' });
+        const nomeEmpresa = import.meta.env.VITE_NOME_EMPRESA || import.meta.env.VITE_NOME_LOJA || 'Rodrigo Veículos';
+        doc.text(nomeEmpresa, pageWidth / 2, margin.top, { align: 'center' });
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');

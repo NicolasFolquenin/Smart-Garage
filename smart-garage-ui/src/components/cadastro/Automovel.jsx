@@ -57,6 +57,7 @@ const Automovel = () => {
         placa: "",
         renavam: "",
         valor: "",
+        custo_aquisicao: "",
         marcaId: "",
         imagem: ""
     };
@@ -137,6 +138,7 @@ const Automovel = () => {
         if (automovel.ano_fabricacao && isNaN(automovel.ano_fabricacao)) tipoErros.push("ano_fabricacao");
         if (automovel.ano_modelo && isNaN(automovel.ano_modelo)) tipoErros.push("ano_modelo");
         if (automovel.valor && isNaN(automovel.valor)) tipoErros.push("valor");
+        if (automovel.custo_aquisicao && isNaN(automovel.custo_aquisicao)) tipoErros.push("custo_aquisicao");
         if (automovel.km && isNaN(automovel.km)) tipoErros.push("km");
 
         return { vazioErros, tamanhoErros, tipoErros };
@@ -216,6 +218,7 @@ const Automovel = () => {
         formData.append("placa", automovel.placa);
         formData.append("renavam", automovel.renavam);
         formData.append("valor", automovel.valor);
+        formData.append("custo_aquisicao", automovel.custo_aquisicao || "");
         formData.append("marcaId", marcaResp?.data.id);
         formData.append("file", automovel.file);
 
@@ -237,6 +240,11 @@ const Automovel = () => {
         setSucesso(true);
         setMensagemSucesso("Automóvel cadastrado com sucesso!");
 
+        if (automovel.origem === "Estoque Inicial") {
+            setTimeout(() => {
+                navigate('/estoque');
+            }, 1500);
+        }
 
         if (automovel.origem === "Compra" && automovelResp?.data?.id) {
             setTimeout(() => {
@@ -390,11 +398,28 @@ const Automovel = () => {
                                 <label htmlFor="origem" className="form-label">Origem do Automóvel <span className="text-danger">*</span></label>
                                 <select className={`form-select ${hasError("origem") && "is-invalid"}`} id="origem" name="origem" value={automovel.origem} onChange={handleInputChangeAutomovel}>
                                     <option value="">Selecione...</option>
+                                    <option value="Estoque Inicial">Estoque Inicial (Implantação)</option>
                                     <option value="Compra">Compra</option>
                                     <option value="Consignacao">Consignação</option>
                                     <option value="Troca">Troca</option>
                                 </select>
                                 {vazio.includes("origem") && <div className="invalid-feedback">Informe a origem.</div>}
+                            </div>
+                            <div className="col-md-4">
+                                <label htmlFor="custo_aquisicao" className="form-label">
+                                    Custo de Aquisição (R$) {automovel.origem === "Estoque Inicial" && <span className="text-muted">(Recomendado)</span>}
+                                </label>
+                                <input
+                                    type="text"
+                                    className={`form-control ${hasError("custo_aquisicao") && "is-invalid"}`}
+                                    id="custo_aquisicao"
+                                    name="custo_aquisicao"
+                                    placeholder="R$ 0,00"
+                                    value={automovel.custo_aquisicao || ""}
+                                    onChange={handleInputChangeAutomovel}
+                                />
+                                {tipo.includes("custo_aquisicao") && <div className="invalid-feedback">Custo de aquisição inválido.</div>}
+                                <small className="form-text text-muted">Quanto a loja pagou pelo veículo.</small>
                             </div>
                         </div>
                     </fieldset>

@@ -17,7 +17,7 @@ const EditarAutomovel = () => {
 
     const [formData, setFormData] = useState({
         ano_fabricacao: "", ano_modelo: "", cor: "", combustivel: "",
-        km: "", origem: "", placa: "", renavam: "", valor: "",
+        km: "", origem: "", placa: "", renavam: "", valor: "", custo_aquisicao: "",
 
         marcaId: null,
         modeloId: null,
@@ -206,6 +206,7 @@ const EditarAutomovel = () => {
             automovelData.append("placa", formData.placa);
             automovelData.append("renavam", formData.renavam);
             automovelData.append("valor", formData.valor);
+            automovelData.append("custo_aquisicao", formData.custo_aquisicao ?? "");
             automovelData.append("marcaId", formData.marcaId);
             automovelData.append("modeloId", formData.modeloId);
             automovelData.append("file", formData.file);
@@ -404,6 +405,7 @@ const EditarAutomovel = () => {
                                     <label htmlFor="origem" className="form-label">Origem do Automóvel <span className="text-danger">*</span></label>
                                     <select value={formData.origem ?? ""} className={`form-select ${hasError("origem") && "is-invalid"}`} id="origem" name="origem" onChange={handleInputChange}>
                                         <option value="">Selecione...</option>
+                                        <option value="Estoque Inicial">Estoque Inicial (Implantação)</option>
                                         <option value="Compra">Compra</option>
                                         <option value="Consignacao">Consignação</option>
                                         <option value="Troca">Troca</option>
@@ -432,6 +434,28 @@ const EditarAutomovel = () => {
                                     />
                                     {vazio.includes("valor") && <div className="invalid-feedback">Informe o valor.</div>}
                                     {tipo.includes("valor") && <div className="invalid-feedback">Valor inválido.</div>}
+                                </div>
+                                <div className="col-md-4">
+                                    <label htmlFor="custo_aquisicao" className="form-label">Custo de Aquisição (R$)</label>
+                                    <NumericFormat value={formData.custo_aquisicao ?? ""} placeholder="R$ 0,00" className="form-control" id="custo_aquisicao" name="custo_aquisicao"
+                                        onValueChange={(values) => {
+                                            const syntheticEvent = {
+                                                target: {
+                                                    name: "custo_aquisicao",
+                                                    value: values.value
+                                                }
+                                            };
+                                            handleInputChange(syntheticEvent);
+                                        }}
+
+                                        thousandSeparator="."
+                                        decimalSeparator=","
+                                        prefix="R$ "
+                                        decimalScale={2}
+                                        fixedDecimalScale={true}
+                                        allowNegative={false}
+                                    />
+                                    <small className="form-text text-muted">Quanto a loja pagou pelo veículo.</small>
                                 </div>
                                 <div className="col-md-4">
                                     <label htmlFor="foto" className="form-label">Foto do Automóvel</label>
