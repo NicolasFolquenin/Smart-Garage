@@ -81,7 +81,8 @@ const gerarPDF = async (dados, sumario, filtros, graficoElement) => {
 
     // --- TÍTULO E FILTROS ---
     const addTitleAndFilters = () => {
-        const nomeRelatorio = `Relatório Gerencial de ${filtros.tipo}`;
+        const nomeTipo = filtros.tipo === 'BalancoGeral' ? 'Balanço Geral' : filtros.tipo;
+        const nomeRelatorio = `Relatório Gerencial de ${nomeTipo}`;
 
         const dataInicioFmt = formatLocalDate(filtros.dataInicio, "dd 'de' MMMM 'de' yyyy");
         const dataFimFmt = formatLocalDate(filtros.dataFim, "dd 'de' MMMM 'de' yyyy");
@@ -124,6 +125,16 @@ const gerarPDF = async (dados, sumario, filtros, graficoElement) => {
         };
 
         switch (filtros.tipo) {
+            case 'BalancoGeral':
+                const cardWidthBalanco = (usableWidth - (cardGap * 3)) / 4;
+                const saldoVal = sumario.saldo ?? 0;
+                const saldoColor = saldoVal >= 0 ? [25, 135, 84] : [220, 53, 69];
+                drawCard('Total de Registros', (sumario.quantidadeRegistros ?? 0).toString(), cardWidthBalanco);
+                drawCard('Receitas (Lucro)', (sumario.receitas ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), cardWidthBalanco, [25, 135, 84]);
+                drawCard('Despesas Operacionais', (sumario.despesas ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), cardWidthBalanco, [220, 53, 69]);
+                drawCard('Saldo Líquido', saldoVal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), cardWidthBalanco, saldoColor);
+                break;
+
             case 'Venda':
                 const cardWidthVenda = (usableWidth - (cardGap * 3)) / 4;
                 drawCard('Total de Vendas', sumario.quantidadeRegistros.toString(), cardWidthVenda);
@@ -159,6 +170,18 @@ const gerarPDF = async (dados, sumario, filtros, graficoElement) => {
         let headers, body;
 
         switch (filtros.tipo) {
+            case 'BalancoGeral':
+                headers = [["Data", "Tipo", "Descrição / Veículo", "Resultado / Valor"]];
+                body = dados.map(item => [
+                    formatLocalDate(item.data_ordenacao),
+                    item.tipo_transacao || 'N/A',
+                    item.tipo_transacao === 'Venda'
+                        ? `Venda - Automóvel: ${item.automovel?.placa || 'N/A'}`
+                        : (item.descricao || (item.automovel?.placa ? `Manutenção - Placa: ${item.automovel.placa}` : 'Gasto Geral')),
+                    (item.tipo_transacao === 'Venda' ? parseFloat(item.lucro || 0) : -Math.abs(parseFloat(item.valor || 0)))
+                        .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                ]);
+                break;
             case 'Venda':
                 headers = [["Data", "Cliente", "Automóvel (Placa)", "Valor", "Comissão", "Lucro"]];
                 body = dados.map(item => [
