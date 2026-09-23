@@ -6,12 +6,15 @@ exports.gerarRelatorio = async (req, res) => {
 
     if (tipo === 'Venda') {
         try {
+            const dtInicio = dataInicio ? new Date(dataInicio) : new Date(0);
+            const dtFim = dataFim ? new Date(dataFim) : new Date();
+
             const vendas = await Entidade.Venda.findAll({
-                where: { data: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
+                where: { data: { [Op.between]: [dtInicio, dtFim] } },
                 include: [
-                    { model: Entidade.Automovel, as: 'automovel' },
-                    { model: Entidade.Cliente, as: 'cliente' },
-                    { model: Entidade.PagamentoVenda, as: 'pagamento_vendas' }
+                    { model: Entidade.Automovel, as: 'automovel', required: false },
+                    { model: Entidade.Cliente, as: 'cliente', required: false },
+                    { model: Entidade.PagamentoVenda, as: 'pagamento_vendas', required: false }
                 ],
                 order: [['data', 'DESC']]
             });
@@ -23,32 +26,33 @@ exports.gerarRelatorio = async (req, res) => {
                 let lucro = 0;
                 let comissao = parseFloat(venda.comissao || 0);
                 const origem = venda.automovel?.origem || venda.origem_automovel;
+                const autoId = venda.automovelId || venda.automovel?.id;
 
-                if (origem === 'Compra') {
-                    const compra = await Entidade.Compra.findOne({ where: { automovelId: venda.automovelId } });
-                    custo = parseFloat(compra?.valor || venda.automovel?.custo_aquisicao || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
-
-                } else if (origem === 'Troca') {
-                    const troca = await Entidade.Troca.findOne({
-                        where: {
-                            [Op.or]: [
-                                { automovelId: venda.automovelId },
-                                { automovel_fornecido: venda.automovelId }
-                            ]
-                        }
-                    });
-                    custo = parseFloat(troca?.valor_aquisicao || venda.automovel?.custo_aquisicao || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
-
-                } else if (origem === 'Consignacao') {
-                    const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: venda.automovelId } });
-                    custo = parseFloat(consignacao?.valor || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
+                if (autoId) {
+                    if (origem === 'Compra') {
+                        const compra = await Entidade.Compra.findOne({ where: { automovelId: autoId } });
+                        custo = parseFloat(compra?.valor || venda.automovel?.custo_aquisicao || 0);
+                    } else if (origem === 'Troca') {
+                        const troca = await Entidade.Troca.findOne({
+                            where: {
+                                [Op.or]: [
+                                    { automovelId: autoId },
+                                    { automovel_fornecido: autoId }
+                                ]
+                            }
+                        });
+                        custo = parseFloat(troca?.valor_aquisicao || venda.automovel?.custo_aquisicao || 0);
+                    } else if (origem === 'Consignacao') {
+                        const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: autoId } });
+                        custo = parseFloat(consignacao?.valor || 0);
+                    } else {
+                        custo = parseFloat(venda.automovel?.custo_aquisicao || 0);
+                    }
                 } else {
                     custo = parseFloat(venda.automovel?.custo_aquisicao || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 }
+
+                lucro = parseFloat(venda.valor || 0) - custo - comissao;
 
                 relatorioEnriquecido.push({
                     ...venda.toJSON(),
@@ -73,12 +77,15 @@ exports.gerarRelatorio = async (req, res) => {
 
     if (tipo === 'BalancoGeral') {
         try {
+            const dtInicio = dataInicio ? new Date(dataInicio) : new Date(0);
+            const dtFim = dataFim ? new Date(dataFim) : new Date();
+
             const vendas = await Entidade.Venda.findAll({
-                where: { data: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
+                where: { data: { [Op.between]: [dtInicio, dtFim] } },
                 include: [
-                    { model: Entidade.Automovel, as: 'automovel' },
-                    { model: Entidade.Cliente, as: 'cliente' },
-                    { model: Entidade.PagamentoVenda, as: 'pagamento_vendas' }
+                    { model: Entidade.Automovel, as: 'automovel', required: false },
+                    { model: Entidade.Cliente, as: 'cliente', required: false },
+                    { model: Entidade.PagamentoVenda, as: 'pagamento_vendas', required: false }
                 ],
                 order: [['data', 'DESC']]
             });
@@ -91,44 +98,47 @@ exports.gerarRelatorio = async (req, res) => {
                 let lucro = 0;
                 let comissao = parseFloat(venda.comissao || 0);
                 const origem = venda.automovel?.origem || venda.origem_automovel;
+                const autoId = venda.automovelId || venda.automovel?.id;
 
-                if (origem === 'Compra') {
-                    const compra = await Entidade.Compra.findOne({ where: { automovelId: venda.automovelId } });
-                    custo = parseFloat(compra?.valor || venda.automovel?.custo_aquisicao || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
-                } else if (origem === 'Troca') {
-                    const troca = await Entidade.Troca.findOne({
-                        where: {
-                            [Op.or]: [
-                                { automovelId: venda.automovelId },
-                                { automovel_fornecido: venda.automovelId }
-                            ]
-                        }
-                    });
-                    custo = parseFloat(troca?.valor_aquisicao || venda.automovel?.custo_aquisicao || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
-                } else if (origem === 'Consignacao') {
-                    const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: venda.automovelId } });
-                    custo = parseFloat(consignacao?.valor || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
+                if (autoId) {
+                    if (origem === 'Compra') {
+                        const compra = await Entidade.Compra.findOne({ where: { automovelId: autoId } });
+                        custo = parseFloat(compra?.valor || venda.automovel?.custo_aquisicao || 0);
+                    } else if (origem === 'Troca') {
+                        const troca = await Entidade.Troca.findOne({
+                            where: {
+                                [Op.or]: [
+                                    { automovelId: autoId },
+                                    { automovel_fornecido: autoId }
+                                ]
+                            }
+                        });
+                        custo = parseFloat(troca?.valor_aquisicao || venda.automovel?.custo_aquisicao || 0);
+                    } else if (origem === 'Consignacao') {
+                        const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: autoId } });
+                        custo = parseFloat(consignacao?.valor || 0);
+                    } else {
+                        custo = parseFloat(venda.automovel?.custo_aquisicao || 0);
+                    }
                 } else {
                     custo = parseFloat(venda.automovel?.custo_aquisicao || 0);
-                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 }
+
+                lucro = parseFloat(venda.valor || 0) - custo - comissao;
 
                 totalLucroVendas += lucro;
                 vendasEnriquecidas.push({ ...venda.toJSON(), custo, lucro, origem });
             }
 
             const gastos = await Entidade.Gasto.findAll({
-                where: { data: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
-                include: [{ model: Entidade.Automovel, as: 'automovel' }]
+                where: { data: { [Op.between]: [dtInicio, dtFim] } },
+                include: [{ model: Entidade.Automovel, as: 'automovel', required: false }]
             });
             const totalGastos = gastos.reduce((acc, curr) => acc + parseFloat(curr.valor || 0), 0);
 
             const manutencoes = await Entidade.Manutencao.findAll({
-                where: { data_envio: { [Op.between]: [new Date(dataInicio), new Date(dataFim)] } },
-                include: [{ model: Entidade.Automovel, as: 'automovel' }]
+                where: { data_envio: { [Op.between]: [dtInicio, dtFim] } },
+                include: [{ model: Entidade.Automovel, as: 'automovel', required: false }]
             });
             const totalManutencoes = manutencoes.reduce((acc, curr) => acc + parseFloat(curr.valor || 0), 0);
 
@@ -192,13 +202,16 @@ exports.gerarRelatorio = async (req, res) => {
     }
 
     try {
+        const dtInicio = dataInicio ? new Date(dataInicio) : new Date(0);
+        const dtFim = dataFim ? new Date(dataFim) : new Date();
+
         const queryOptions = {
             where: {
                 [dateColumnName]: {
-                    [Op.between]: [new Date(dataInicio), new Date(dataFim)]
+                    [Op.between]: [dtInicio, dtFim]
                 }
             },
-            include: includeOptions
+            include: includeOptions.map(inc => ({ ...inc, required: false }))
         };
 
         const dados = await EntidadeSelecionada.findAll(queryOptions);

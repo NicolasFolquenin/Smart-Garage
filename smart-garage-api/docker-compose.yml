@@ -52,6 +52,7 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+        - VITE_NOME_EMPRESA=${VITE_NOME_EMPRESA:-Rodrigo Veículos}
     container_name: ui_smart_garage
     ports:
       - "5173:80"

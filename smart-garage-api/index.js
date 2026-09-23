@@ -77,8 +77,34 @@ const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // SERVIDOR E BANCO DE DADOS
-db.sequelize.sync({ force: false }).then(() => {
+db.sequelize.sync({ force: false }).then(async () => {
     console.log("Banco de dados sincronizado!");
+
+    // Migrações automáticas de compatibilidade para Docker/Deploy
+    try {
+        const [colunas] = await db.sequelize.query("SHOW COLUMNS FROM automovel LIKE 'custo_aquisicao';");
+        if (colunas.length === 0) {
+            console.log("Adicionando coluna 'custo_aquisicao' na tabela 'automovel'...");
+            await db.sequelize.query("ALTER TABLE automovel ADD COLUMN custo_aquisicao DECIMAL(10, 2) NULL AFTER valor;");
+            console.log("✅ Coluna 'custo_aquisicao' adicionada!");
+        }
+    } catch (migracaoErro) {
+        console.warn("Aviso na migração de custo_aquisicao:", migracaoErro.message);
+    }
+
+    try {
+        await db.sequelize.query("ALTER TABLE automovel MODIFY COLUMN origem ENUM('Compra', 'Consignacao', 'Troca', 'Estoque Inicial') NOT NULL;");
+        console.log("✅ ENUM de 'origem' verificado/atualizado!");
+    } catch (migracaoErro) {
+        console.warn("Aviso na migração de ENUM origem:", migracaoErro.message);
+    }
+
+    try {
+        await db.sequelize.query("ALTER TABLE cliente MODIFY COLUMN email VARCHAR(50) NULL;");
+        console.log("✅ Coluna 'email' de cliente ajustada para opcional!");
+    } catch (migracaoErro) {
+        // Silencioso se tabela ou coluna já estiver ok
+    }
     
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);
