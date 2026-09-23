@@ -152,7 +152,7 @@ const Consultas = () => {
             }
         };
 
-        const formatCurrency = (value) => parseFloat(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formatCurrency = (value) => parseFloat(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         switch (tipoRelatorioGerado) {
             case 'BalancoGeral':
@@ -212,7 +212,11 @@ const Consultas = () => {
                                     <td>{item.automovel?.placa || 'N/A'}</td>
                                     <td>{item.origem || 'N/A'}</td>
                                     <td className='text-end'>{formatCurrency(item.valor)}</td>
-                                    <td>{item.forma_pagamento}</td>
+                                    <td>
+                                        {item.pagamento_vendas && item.pagamento_vendas.length > 0
+                                            ? item.pagamento_vendas.map(p => p.forma_pagamento).join(', ')
+                                            : (item.forma_pagamento || 'N/A')}
+                                    </td>
                                     <td className='text-end'>{formatCurrency(item.custo)}</td>
                                     <td className='text-end'>{formatCurrency(item.comissao)}</td>
                                     <td className={`text-end  ${item.lucro > 0 ? 'text-success' : 'text-danger'}`}>

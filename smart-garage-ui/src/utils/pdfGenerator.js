@@ -164,9 +164,9 @@ const gerarPDF = async (dados, sumario, filtros, graficoElement) => {
                     formatLocalDate(item.data),
                     item.cliente?.nome || 'N/A',
                     item.automovel?.placa || 'N/A',
-                    parseFloat(item.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-                    parseFloat(item.comissao).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-                    parseFloat(item.lucro).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                    parseFloat(item.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                    parseFloat(item.comissao || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                    parseFloat(item.lucro || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
                 ]);
                 break;
             case 'Troca':

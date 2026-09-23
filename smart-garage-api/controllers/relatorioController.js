@@ -21,24 +21,32 @@ exports.gerarRelatorio = async (req, res) => {
             for (const venda of vendas) {
                 let custo = 0;
                 let lucro = 0;
-                const origem = venda.automovel?.origem;
+                let comissao = parseFloat(venda.comissao || 0);
+                const origem = venda.automovel?.origem || venda.origem_automovel;
 
                 if (origem === 'Compra') {
                     const compra = await Entidade.Compra.findOne({ where: { automovelId: venda.automovelId } });
                     custo = parseFloat(compra?.valor || 0);
-                    comissao = parseFloat(venda.comissao);
-                    lucro = parseFloat(venda.valor) - custo - comissao;
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
 
                 } else if (origem === 'Troca') {
-                    const troca = await Entidade.Troca.findOne({ where: { automovelId: venda.automovelId } });
-                    custo = parseFloat(troca.valor_aquisicao || 0);
-                    comissao = parseFloat(venda.comissao);
-                    lucro = parseFloat(venda.valor) - custo - comissao;
+                    const troca = await Entidade.Troca.findOne({
+                        where: {
+                            [Op.or]: [
+                                { automovelId: venda.automovelId },
+                                { automovel_fornecido: venda.automovelId }
+                            ]
+                        }
+                    });
+                    custo = parseFloat(troca?.valor_aquisicao || 0);
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
 
                 } else if (origem === 'Consignacao') {
                     const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: venda.automovelId } });
-                    comissao = parseFloat(venda.comissao);
-                    lucro = parseFloat(consignacao?.valor || 0) - comissao;
+                    custo = parseFloat(consignacao?.valor || 0);
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
+                } else {
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 }
 
                 relatorioEnriquecido.push({
@@ -80,23 +88,30 @@ exports.gerarRelatorio = async (req, res) => {
             for (const venda of vendas) {
                 let custo = 0;
                 let lucro = 0;
-                let comissao = 0;
-                const origem = venda.automovel?.origem;
+                let comissao = parseFloat(venda.comissao || 0);
+                const origem = venda.automovel?.origem || venda.origem_automovel;
 
                 if (origem === 'Compra') {
                     const compra = await Entidade.Compra.findOne({ where: { automovelId: venda.automovelId } });
                     custo = parseFloat(compra?.valor || 0);
-                    comissao = parseFloat(venda.comissao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 } else if (origem === 'Troca') {
-                    const troca = await Entidade.Troca.findOne({ where: { automovelId: venda.automovelId } });
+                    const troca = await Entidade.Troca.findOne({
+                        where: {
+                            [Op.or]: [
+                                { automovelId: venda.automovelId },
+                                { automovel_fornecido: venda.automovelId }
+                            ]
+                        }
+                    });
                     custo = parseFloat(troca?.valor_aquisicao || 0);
-                    comissao = parseFloat(venda.comissao || 0);
                     lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 } else if (origem === 'Consignacao') {
                     const consignacao = await Entidade.Consignacao.findOne({ where: { automovelId: venda.automovelId } });
-                    comissao = parseFloat(venda.comissao || 0);
-                    lucro = parseFloat(consignacao?.valor || 0) - comissao;
+                    custo = parseFloat(consignacao?.valor || 0);
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
+                } else {
+                    lucro = parseFloat(venda.valor || 0) - custo - comissao;
                 }
 
                 totalLucroVendas += lucro;
