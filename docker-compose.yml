@@ -2,6 +2,8 @@ services:
   db:
     image: mysql:8.0
     container_name: db_smart_garage
+    env_file:
+      - ./smart-garage-api/.env
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
@@ -31,6 +33,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - ./smart-garage-api/.env
     environment:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
@@ -74,3 +78,5 @@ services:
 
 volumes:
   mysql_data:
+    name: smart-garage-api_mysql_data
+    external: true
