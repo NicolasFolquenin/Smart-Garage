@@ -36,10 +36,15 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_DRIVE_FOLDER_ID: ${GOOGLE_DRIVE_FOLDER_ID:-}
+      GOOGLE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_SERVICE_ACCOUNT_EMAIL:-}
+      GOOGLE_SERVICE_ACCOUNT_KEY: ${GOOGLE_SERVICE_ACCOUNT_KEY:-}
+      BACKUP_AUTO_HOURS: ${BACKUP_AUTO_HOURS:-}
     ports:
       - "3000:3000"
     volumes:
       - ./uploads:/app/uploads
+      - ./backups:/app/backups
     logging:
       driver: "json-file"
       options:

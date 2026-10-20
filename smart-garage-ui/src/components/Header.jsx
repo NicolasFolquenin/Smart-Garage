@@ -143,8 +143,15 @@ const Header = () => {
                                     {user.role === 'gerente' && (
                                         <li>
                                             <Link to="/gerenciar/comissoes" className={`nav-link ${location.pathname.includes('/gerenciar/comissoes') ? 'active' : 'link-body-emphasis'}`}> <svg className="me-2" width="16" height="16" aria-hidden="true"></svg>
-                                                <i class="bi bi-cash me-2"></i>
+                                                <i className="bi bi-cash me-2"></i>
                                                 Comissões</Link>
+                                        </li>
+                                    )}
+                                    {user.role === 'gerente' && (
+                                        <li>
+                                            <Link to="/gerenciar/backups" className={`nav-link ${location.pathname.includes('/gerenciar/backups') ? 'active' : 'link-body-emphasis'}`}> <svg className="me-2" width="16" height="16" aria-hidden="true"></svg>
+                                                <i className="bi bi-shield-lock-fill me-2"></i>
+                                                Backups & Dados</Link>
                                         </li>
                                     )}
                                 </ul>

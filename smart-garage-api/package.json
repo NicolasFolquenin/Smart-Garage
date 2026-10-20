@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",
@@ -7,9 +9,11 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-rate-limit": "^8.6.0",
+    "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "mysql2": "^3.15.3",
+    "mysqldump": "^3.2.0",
     "nodemailer": "^7.0.6",
     "sequelize": "^6.37.7"
   },

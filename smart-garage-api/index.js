@@ -50,6 +50,7 @@ const relatorioRoutes = require("./routes/relatorioRoutes");
 const trocaRoutes = require("./routes/trocaRoutes");
 const vendaRoutes = require("./routes/vendaRoutes");
 const vendedorRoutes = require("./routes/vendedorRoutes");
+const backupRoutes = require("./routes/backupRoutes");
 
 // CONFIGURAÇÃO DAS ROTAS
 app.use('/api/automovel', automovelRoutes);
@@ -72,6 +73,7 @@ app.use('/api/relatorio', relatorioRoutes);
 app.use('/api/troca', trocaRoutes);
 app.use('/api/venda', vendaRoutes);
 app.use('/api/vendedor', vendedorRoutes);
+app.use('/api/backup', backupRoutes);
 
 const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -108,6 +110,22 @@ db.sequelize.sync({ force: false }).then(async () => {
     
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);
+
+        // Rotina de Backup Automático (se BACKUP_AUTO_HOURS estiver configurado)
+        const autoHours = parseInt(process.env.BACKUP_AUTO_HOURS, 10);
+        if (autoHours && autoHours > 0) {
+            console.log(`[Backup Automático] Ativado! Intervalo: a cada ${autoHours} hora(s).`);
+            const backupService = require('./services/backupService');
+            setInterval(async () => {
+                console.log('[Backup Automático] Executando rotina agendada...');
+                try {
+                    await backupService.criarBackup();
+                    console.log('[Backup Automático] Concluído com sucesso!');
+                } catch (e) {
+                    console.error('[Backup Automático] Erro:', e.message);
+                }
+            }, autoHours * 60 * 60 * 1000);
+        }
     });
 }).catch(err => {
     console.error("Erro ao sincronizar banco de dados:", err);

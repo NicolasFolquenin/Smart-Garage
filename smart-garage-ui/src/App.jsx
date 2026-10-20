@@ -45,6 +45,7 @@ const RegistroVendedor = lazy(() => import('./components/cadastro/Vendedor'));
 const ResetarSenha = lazy(() => import('./components/ResetarSenha'));
 const GerenciarComissoes = lazy(() => import('./components/GerenciarComissoes'));
 const AlterarSenha = lazy(() => import('./components/AlterarSenha'));
+const GerenciarBackups = lazy(() => import('./components/GerenciarBackups'));
 
 function App() {
 
@@ -117,6 +118,7 @@ function App() {
               <Route path='/listagem/vendedores' element={<ListVendedores />}></Route>
               <Route path='/vendedor' element={<RegistroVendedor />}></Route>
               <Route path="/gerenciar/comissoes" element={<GerenciarComissoes />}></Route>
+              <Route path="/gerenciar/backups" element={<GerenciarBackups />}></Route>
             </Route>
 
           </Routes>
