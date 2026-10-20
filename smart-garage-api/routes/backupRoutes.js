@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const backupController = require('../controllers/backupController');
-const { verifyToken, isGerente } = require('../middleware/authMiddleware');
+const { verifyToken, isSuperAdmin } = require('../middleware/authMiddleware');
 
 // Configuração do multer para arquivos de backup temporários
 const tempUploadDir = path.resolve(__dirname, '..', 'backups', 'temp_uploads');
@@ -34,8 +34,8 @@ const upload = multer({
     }
 });
 
-// Todas as rotas de backup são exclusivas para o perfil 'gerente'
-router.use(verifyToken, isGerente);
+// Todas as rotas de backup são exclusivas para o perfil 'super_admin'
+router.use(verifyToken, isSuperAdmin);
 
 router.get('/status', (req, res) => backupController.getStatus(req, res));
 router.get('/', (req, res) => backupController.listar(req, res));

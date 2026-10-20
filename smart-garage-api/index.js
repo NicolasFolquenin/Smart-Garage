@@ -29,6 +29,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Middleware de Headers de Segurança HTTP (Defesa em profundidade)
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
+
 // IMPORTAÇÃO DE TODAS AS ROTAS
 const automovelRoutes = require("./routes/automovelRoutes");
 const cidadeRoutes = require("./routes/cidadeRoutes");
@@ -106,6 +115,23 @@ db.sequelize.sync({ force: false }).then(async () => {
         console.log("✅ Coluna 'email' de cliente ajustada para opcional!");
     } catch (migracaoErro) {
         // Silencioso se tabela ou coluna já estiver ok
+    }
+
+    try {
+        const [colunasSuperAdmin] = await db.sequelize.query("SHOW COLUMNS FROM funcionario LIKE 'super_admin';");
+        if (colunasSuperAdmin.length === 0) {
+            console.log("Adicionando coluna 'super_admin' na tabela 'funcionario'...");
+            await db.sequelize.query("ALTER TABLE funcionario ADD COLUMN super_admin BOOLEAN NOT NULL DEFAULT FALSE;");
+            console.log("✅ Coluna 'super_admin' adicionada!");
+        }
+        // Ativa super_admin para o usuário 'admin' ou primeiro funcionário se nenhum tiver
+        const [adminsAtivos] = await db.sequelize.query("SELECT id FROM funcionario WHERE super_admin = TRUE LIMIT 1;");
+        if (adminsAtivos.length === 0) {
+            await db.sequelize.query("UPDATE funcionario SET super_admin = TRUE WHERE usuario = 'admin' OR id = 1 LIMIT 1;");
+            console.log("✅ Usuário principal configurado como Super Admin!");
+        }
+    } catch (migracaoErro) {
+        console.warn("Aviso na migração de super_admin:", migracaoErro.message);
     }
     
     app.listen(PORT, () => {

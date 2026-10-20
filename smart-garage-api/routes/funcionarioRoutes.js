@@ -3,8 +3,8 @@ const router = express.Router();
 const funcionarioController = require("../controllers/funcionarioController");
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/', funcionarioController.createFuncionario);
+router.post('/', authMiddleware.verifyToken, authMiddleware.isGerente, funcionarioController.createFuncionario);
 router.post('/alterar-senha', authMiddleware.verifyToken, funcionarioController.alterarSenhaLogado);
-router.get('/', funcionarioController.getAllFuncionarios);
+router.get('/', authMiddleware.verifyToken, authMiddleware.isGerente, funcionarioController.getAllFuncionarios);
 
 module.exports = router;

@@ -9,6 +9,9 @@ const Header = () => {
     const navigate = useNavigate();
     const [isDarkMode, setIsDarkMode] = useState(false);
 
+    const isGerente = user && (user.role === 'gerente' || user.role === 'super_admin' || user.super_admin === true);
+    const isSuperAdmin = user && (user.role === 'super_admin' || user.super_admin === true);
+
     useEffect(() => {
         const storedTheme = localStorage.getItem('theme');
         if (storedTheme === 'dark') {
@@ -95,7 +98,7 @@ const Header = () => {
                                             <i className="bi bi-cash-coin me-2"></i>Vendas
                                         </Link>
                                     </li>
-                                    {user.role === "gerente" ? (
+                                    {isGerente ? (
                                         <li>
                                             <Link to="/listagem/trocas" className={`nav-link  ${location.pathname === '/listagem/trocas' ? 'active' : 'link-body-emphasis'}`} ><svg className="bi pe-none me-2" width="16" height="16" aria-hidden="true"><use xlinkHref="#table"></use></svg>
                                                 <i class="bi bi-arrow-repeat me-2"></i>Trocas
@@ -109,7 +112,7 @@ const Header = () => {
                                             </li>
                                         )
                                     }
-                                    {user.role === "gerente" && (
+                                    {isGerente && (
                                         <li>
                                             <Link to="/consultas" className={`nav-link ${location.pathname === '/consultas' ? 'active' : 'link-body-emphasis'}`}> <svg className="bi pe-none me-2" width="16" height="16" aria-hidden="true"><use xlinkHref="#grid"></use></svg>
                                                 <i className="bi bi-file-earmark-bar-graph-fill me-2"></i>Consultas Gerenciais
@@ -121,14 +124,14 @@ const Header = () => {
                                             <i className="bi bi-safe2-fill me-2"></i>Gastos
                                         </Link>
                                     </li>
-                                    {user.role === "gerente" && (
+                                    {isGerente && (
                                         <li>
                                             <Link to="/listagem/compras" className={`nav-link ${location.pathname === '/listagem/compras' ? 'active' : 'link-body-emphasis'}`}> <svg className="me-2" width="16" height="16" aria-hidden="true"></svg>
                                                 <i className="bi bi-cart-fill me-2"></i>Compras
                                             </Link>
                                         </li>
                                     )}
-                                    {user.role === 'gerente' && (
+                                    {isGerente && (
                                         <li>
                                             <Link to="/listagem/vendedores" className={`nav-link ${location.pathname === ('/listagem/vendedores') ? 'active' : 'link-body-emphasis'}`}><svg className="me-2" width="16" height="16" aria-hidden="true"></svg>
                                                 <i className="bi bi-people-fill me-2"></i>
@@ -140,14 +143,14 @@ const Header = () => {
                                         <i className="bi bi-person-lines-fill me-2"></i>
                                         Clientes
                                     </Link>
-                                    {user.role === 'gerente' && (
+                                    {isGerente && (
                                         <li>
                                             <Link to="/gerenciar/comissoes" className={`nav-link ${location.pathname.includes('/gerenciar/comissoes') ? 'active' : 'link-body-emphasis'}`}> <svg className="me-2" width="16" height="16" aria-hidden="true"></svg>
                                                 <i className="bi bi-cash me-2"></i>
                                                 Comissões</Link>
                                         </li>
                                     )}
-                                    {user.role === 'gerente' && (
+                                    {isSuperAdmin && (
                                         <li>
                                             <Link to="/gerenciar/backups" className={`nav-link ${location.pathname.includes('/gerenciar/backups') ? 'active' : 'link-body-emphasis'}`}> <svg className="me-2" width="16" height="16" aria-hidden="true"></svg>
                                                 <i className="bi bi-shield-lock-fill me-2"></i>

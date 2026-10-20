@@ -118,6 +118,10 @@ function App() {
               <Route path='/listagem/vendedores' element={<ListVendedores />}></Route>
               <Route path='/vendedor' element={<RegistroVendedor />}></Route>
               <Route path="/gerenciar/comissoes" element={<GerenciarComissoes />}></Route>
+            </Route>
+
+            {/* Rotas Exclusivas do Super Admin */}
+            <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
               <Route path="/gerenciar/backups" element={<GerenciarBackups />}></Route>
             </Route>
 

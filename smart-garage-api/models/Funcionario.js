@@ -50,6 +50,11 @@ const Funcionario = db.sequelize.define('funcionario', {
         type: db.Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: false
+    },
+    super_admin: {
+        type: db.Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
     }
 });
 

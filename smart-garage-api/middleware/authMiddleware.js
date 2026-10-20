@@ -1,7 +1,16 @@
 const jwt = require('jsonwebtoken');
 
-const verifyToken = (req, res, next) => {
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret || secret === 'seu_segredo_super_secreto' || secret.includes('sua_chave_mestra')) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error('⚠️ [ALERTA DE SEGURANÇA]: JWT_SECRET fraco ou não definido no .env em ambiente de produção!');
+        }
+    }
+    return secret || 'smart_garage_fallback_secret_do_not_use_in_prod';
+};
 
+const verifyToken = (req, res, next) => {
     // Pega o token dos cookies
     const token = req.cookies?.token;
 
@@ -10,20 +19,21 @@ const verifyToken = (req, res, next) => {
     }
 
     try {
-        // Verifica se o token é válido
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'seu_segredo_super_secreto');
+        const secret = getJwtSecret();
+        const decoded = jwt.verify(token, secret);
 
         req.user = decoded;
 
-        // Sliding Session: Gerar um novo token para estender o tempo
+        // Sliding Session: Renovar o token para manter a sessão ativa enquanto navega
         const novoToken = jwt.sign(
             {
                 id: decoded.id,
                 nome: decoded.nome,
                 role: decoded.role,
+                super_admin: decoded.super_admin || false,
                 precisa_alterar_senha: decoded.precisa_alterar_senha
             },
-            process.env.JWT_SECRET || 'seu_segredo_super_secreto',
+            secret,
             { expiresIn: '15m' }
         );
 
@@ -43,14 +53,24 @@ const verifyToken = (req, res, next) => {
 };
 
 const isGerente = (req, res, next) => {
-    if (req.user && req.user.role === 'gerente') {
+    if (req.user && (req.user.role === 'gerente' || req.user.role === 'super_admin' || req.user.super_admin === true)) {
         next();
     } else {
         return res.status(403).send({ mensagem: "Acesso negado. Rota exclusiva para gerentes." });
     }
 };
 
+const isSuperAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'super_admin' || req.user.super_admin === true)) {
+        next();
+    } else {
+        return res.status(403).send({ mensagem: "Acesso negado. Rota exclusiva para o Super Administrador." });
+    }
+};
+
 module.exports = {
     verifyToken,
-    isGerente
+    isGerente,
+    isSuperAdmin,
+    getJwtSecret
 };

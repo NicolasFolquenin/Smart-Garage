@@ -63,11 +63,20 @@ exports.createFuncionario = async (req, res) => {
 };
 
 exports.getAllFuncionarios = async (req, res) => {
-    Entidade.Funcionario.findAll().then((values) => {
-        res.status(200).send(values);
-    }).catch((err) => {
+    try {
+        const funcionarios = await Entidade.Funcionario.findAll({
+            attributes: {
+                exclude: ['senha', 'resetPasswordToken', 'resetPasswordExpires']
+            },
+            include: [
+                { model: Entidade.Gerente, required: false },
+                { model: Entidade.Vendedor, required: false }
+            ]
+        });
+        res.status(200).send(funcionarios);
+    } catch (err) {
         handleServerError(res, err);
-    })
+    }
 };
 
 exports.alterarSenhaLogado = async (req, res) => {

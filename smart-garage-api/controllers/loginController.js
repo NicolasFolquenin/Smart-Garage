@@ -50,20 +50,23 @@ exports.login = async (req, res) => {
         // Descobrir o papel (role) do funcionário
         let role = null;
 
-        const gerente = await Entidade.Gerente.findOne({
-            where: { funcionarioId: funcionario.id }
-        });
-
-        if (gerente) {
-            role = 'gerente';
+        if (funcionario.super_admin) {
+            role = 'super_admin';
         } else {
-
-            const vendedor = await Entidade.Vendedor.findOne({
+            const gerente = await Entidade.Gerente.findOne({
                 where: { funcionarioId: funcionario.id }
             });
 
-            if (vendedor) {
-                role = 'vendedor';
+            if (gerente) {
+                role = 'gerente';
+            } else {
+                const vendedor = await Entidade.Vendedor.findOne({
+                    where: { funcionarioId: funcionario.id }
+                });
+
+                if (vendedor) {
+                    role = 'vendedor';
+                }
             }
         }
 
@@ -71,15 +74,19 @@ exports.login = async (req, res) => {
             return res.status(403).send({ mensagem: "Funcionário sem cargo definido." });
         }
 
+        const authMiddleware = require('../middleware/authMiddleware');
+        const secret = authMiddleware.getJwtSecret();
+
         // Gera o Token JWT
         const token = jwt.sign(
             {
                 id: funcionario?.id,
                 nome: funcionario?.nome,
                 role: role,
+                super_admin: funcionario.super_admin || false,
                 precisa_alterar_senha: funcionario.precisa_alterar_senha
             },
-            process.env.JWT_SECRET || 'seu_segredo_super_secreto',
+            secret,
             { expiresIn: '15m' } // Expira em 15 minutos de inatividade
         );
 
@@ -98,6 +105,7 @@ exports.login = async (req, res) => {
                 id: funcionario?.id,
                 nome: funcionario?.nome,
                 role: role,
+                super_admin: funcionario.super_admin || false,
                 precisa_alterar_senha: funcionario.precisa_alterar_senha
             }
         });
